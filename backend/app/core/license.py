@@ -1,40 +1,43 @@
 """Licence : version gratuite limitée à 100 hôtes, déblocable par clé signée.
 
-Format de clé : base64url(payload_json) + "." + hmac_sha256(payload, VENDOR_KEY)
+Signature asymétrique Ed25519 :
+  - la clé PUBLIQUE ci-dessous vérifie les licences (sans danger dans un dépôt public) ;
+  - la clé PRIVÉE reste chez l'éditeur (scripts/generate_license.py, jamais distribuée) —
+    elle seule permet de générer des clés valides.
+
+Format de clé : base64url(payload_json) + "." + signature_ed25519_hex
 payload : {"plan": "pro", "max_hosts": 1000, "customer": "...", "expires": "2027-01-01"}
 
-La clé se génère avec scripts/generate_license.py (nécessite la clé vendeur,
-jamais distribuée). Une clé invalide/expirée est ignorée -> retour au plan free.
+Une clé invalide, falsifiée ou expirée est ignorée -> retour au plan free.
 
-⚠️ Logiciel auto-hébergé : ceci est une barrière commerciale honnête, pas du DRM
-   incassable (l'utilisateur a le code). C'est le même modèle que GitLab CE/EE.
+⚠️ Logiciel auto-hébergé et open source : ceci est une barrière commerciale honnête,
+   pas du DRM incassable (l'utilisateur peut patcher le code). Même modèle que GitLab CE/EE.
 """
 from __future__ import annotations
 
 import base64
-import hashlib
-import hmac
 import json
 from datetime import date
 from functools import lru_cache
 
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
 from app.core.config import settings
 
-# Clé de vérification embarquée (la clé de GÉNÉRATION reste chez l'éditeur —
-# ici HMAC symétrique : générer des clés exige cette valeur, gardée privée
-# dans le dépôt de l'éditeur ; changez-la avant toute distribution publique).
-VENDOR_KEY = b"supervision-house-vendor-2026-Kf8mQ2xVw9"
+# Clé publique Ed25519 de l'éditeur (vérification uniquement — impossible de
+# générer une licence avec ; il faut la clé privée correspondante).
+PUBLIC_KEY_HEX = "3e3884b11f4bdded21a6b42885fd0e7944db37c2e5da7e501d75b9ec74894cfe"
 
 FREE_PLAN = {"plan": "free", "max_hosts": 100, "customer": None, "expires": None}
 
 
 def _verify(key: str) -> dict | None:
     try:
-        payload_b64, sig = key.strip().split(".")
+        payload_b64, sig_hex = key.strip().split(".")
         payload_raw = base64.urlsafe_b64decode(payload_b64 + "==")
-        expected = hmac.new(VENDOR_KEY, payload_raw, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(expected, sig):
-            return None
+        public = Ed25519PublicKey.from_public_bytes(bytes.fromhex(PUBLIC_KEY_HEX))
+        public.verify(bytes.fromhex(sig_hex), payload_raw)
         payload = json.loads(payload_raw)
         expires = payload.get("expires")
         if expires and date.fromisoformat(expires) < date.today():
@@ -42,7 +45,7 @@ def _verify(key: str) -> dict | None:
         if not isinstance(payload.get("max_hosts"), int) or payload["max_hosts"] < 1:
             return None
         return payload
-    except Exception:  # noqa: BLE001 — clé malformée = plan free
+    except (InvalidSignature, Exception):  # noqa: BLE001 — clé malformée = plan free
         return None
 
 

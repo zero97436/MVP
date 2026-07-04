@@ -1,14 +1,22 @@
 import base64
-import hashlib
-import hmac
 import json
 
-from app.core.license import VENDOR_KEY, get_license
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives import serialization
+
+import app.core.license as lic_mod
+from app.core.license import get_license
+
+# Paire de clés ÉPHÉMÈRE pour les tests (la vraie clé privée n'est pas dans le dépôt).
+_TEST_KEY = Ed25519PrivateKey.generate()
+_TEST_PUB_HEX = _TEST_KEY.public_key().public_bytes(
+    serialization.Encoding.Raw, serialization.PublicFormat.Raw
+).hex()
 
 
 def _make_key(payload: dict) -> str:
     raw = json.dumps(payload, separators=(",", ":")).encode()
-    sig = hmac.new(VENDOR_KEY, raw, hashlib.sha256).hexdigest()
+    sig = _TEST_KEY.sign(raw).hex()
     return base64.urlsafe_b64encode(raw).decode().rstrip("=") + "." + sig
 
 
@@ -44,6 +52,7 @@ def test_discovery_import_respects_limit(client, monkeypatch):
 def test_valid_license_key_raises_limit(monkeypatch):
     from app.core.config import settings as cfg
 
+    monkeypatch.setattr(lic_mod, "PUBLIC_KEY_HEX", _TEST_PUB_HEX)
     key = _make_key({"plan": "pro", "max_hosts": 5000, "customer": "ACME"})
     monkeypatch.setattr(cfg, "LICENSE_KEY", key)
     lic = get_license()
@@ -53,12 +62,14 @@ def test_valid_license_key_raises_limit(monkeypatch):
 def test_tampered_or_expired_key_falls_back_to_free(monkeypatch):
     from app.core.config import settings as cfg
 
-    # Signature falsifiée (payload modifié).
+    monkeypatch.setattr(lic_mod, "PUBLIC_KEY_HEX", _TEST_PUB_HEX)
+
+    # Signature falsifiée (payload modifié, signature d'un autre payload).
     good = _make_key({"plan": "pro", "max_hosts": 5000, "customer": "X"})
-    payload_b64 = base64.urlsafe_b64encode(
+    forged_payload = base64.urlsafe_b64encode(
         json.dumps({"plan": "pro", "max_hosts": 999999, "customer": "X"}).encode()
     ).decode().rstrip("=")
-    forged = payload_b64 + "." + good.split(".")[1]
+    forged = forged_payload + "." + good.split(".")[1]
     monkeypatch.setattr(cfg, "LICENSE_KEY", forged)
     assert get_license()["plan"] == "free"
 
@@ -69,4 +80,11 @@ def test_tampered_or_expired_key_falls_back_to_free(monkeypatch):
 
     # Clé illisible.
     monkeypatch.setattr(cfg, "LICENSE_KEY", "n-importe-quoi")
+    assert get_license()["plan"] == "free"
+
+    # Clé signée par une AUTRE clé privée (attaquant avec sa propre paire).
+    attacker = Ed25519PrivateKey.generate()
+    raw = json.dumps({"plan": "pro", "max_hosts": 999999}, separators=(",", ":")).encode()
+    rogue = base64.urlsafe_b64encode(raw).decode().rstrip("=") + "." + attacker.sign(raw).hex()
+    monkeypatch.setattr(cfg, "LICENSE_KEY", rogue)
     assert get_license()["plan"] == "free"

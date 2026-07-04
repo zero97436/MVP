@@ -25,6 +25,7 @@ deploy/nginx/certs/*
 
 # Outil éditeur (génération de licences) — ne jamais publier
 scripts/generate_license.py
+scripts/vendor_private.key
 
 # Sauvegardes base de données
 backups/
