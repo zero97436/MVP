@@ -1,0 +1,15 @@
+[Unit]
+Description=supervision-house scheduler (planification des checks)
+After=network.target redis.service supervision-api.service
+
+[Service]
+Type=simple
+User=supervision
+WorkingDirectory=/opt/supervision-house/backend
+EnvironmentFile=/opt/supervision-house/.env
+ExecStart=/opt/supervision-house/backend/.venv/bin/python -m app.workers.scheduler
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

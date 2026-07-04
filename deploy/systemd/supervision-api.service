@@ -1,0 +1,17 @@
+# Exemple de service systemd pour lancer l'API en bare-metal (sans Docker).
+# Copier dans /etc/systemd/system/ puis: systemctl daemon-reload && systemctl enable --now supervision-api
+[Unit]
+Description=supervision-house API (FastAPI/uvicorn)
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=simple
+User=supervision
+WorkingDirectory=/opt/supervision-house/backend
+EnvironmentFile=/opt/supervision-house/.env
+ExecStart=/opt/supervision-house/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

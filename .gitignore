@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Playwright (E2E)
+playwright-report/
+test-results/
+.playwright/
+
+# Env / secrets
+.env
+
+# Certificats TLS (clés privées — ne jamais committer)
+deploy/nginx/certs/*
+!deploy/nginx/certs/README.md
+
+# Outil éditeur (génération de licences) — ne jamais publier
+scripts/generate_license.py
+
+# Sauvegardes base de données
+backups/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/

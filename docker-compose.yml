@@ -1,0 +1,82 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-supervision}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-supervision}
+      POSTGRES_DB: ${POSTGRES_DB:-supervision}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-supervision}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    command: ["api"]
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose:
+      - "8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      # Supervision Docker (lecture des conteneurs). ⚠️ accès puissant — API en lecture seule.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  worker:
+    build: ./backend
+    command: ["worker"]
+    env_file: .env
+    depends_on:
+      - backend
+      - redis
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  scheduler:
+    build: ./backend
+    command: ["scheduler"]
+    env_file: .env
+    depends_on:
+      - backend
+      - redis
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    expose:
+      - "80"
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/nginx/certs:/etc/nginx/certs:ro
+    ports:
+      - "8080:80"
+      - "8443:443"
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  pgdata:
