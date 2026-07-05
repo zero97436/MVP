@@ -333,14 +333,22 @@ export default function TicketsPage() {
                         {t.comments.length === 0 && <p className="text-xs text-ink-faint">Aucun suivi.</p>}
                       </div>
                       {editable && (
-                        <form onSubmit={(e) => { e.preventDefault(); postComment(t.id); }} className="mt-2 flex items-center gap-2">
-                          <input
+                        <form onSubmit={(e) => { e.preventDefault(); postComment(t.id); }} className="mt-2 flex items-end gap-2">
+                          <textarea
                             value={newComment[t.id] ?? ""}
                             onChange={(e) => setNewComment((p) => ({ ...p, [t.id]: e.target.value }))}
-                            placeholder="Ajouter un suivi…"
-                            className="input flex-1 py-1 text-xs"
+                            onKeyDown={(e) => {
+                              // Entrée = envoyer ; Maj+Entrée = nouvelle ligne.
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                postComment(t.id);
+                              }
+                            }}
+                            rows={1}
+                            placeholder="Ajouter un suivi… (Maj+Entrée = nouvelle ligne)"
+                            className="input flex-1 resize-y py-1 text-xs"
                           />
-                          <button type="submit" className="btn-ghost px-2 py-1"><Send className="h-3.5 w-3.5" /></button>
+                          <button type="submit" className="btn-ghost px-2 py-1.5"><Send className="h-3.5 w-3.5" /></button>
                         </form>
                       )}
                     </>
