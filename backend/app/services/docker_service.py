@@ -36,14 +36,21 @@ def ping() -> bool:
 
 
 def list_containers(with_stats: bool = False) -> list[dict]:
-    """Liste tous les conteneurs (running + stopped), stats optionnelles."""
+    """Liste tous les conteneurs (running + stopped), stats optionnelles.
+
+    ⚡ Les stats sont récupérées EN PARALLÈLE : l'API Docker met ~2 s par
+    conteneur (échantillonnage CPU) — en séquentiel, 10 conteneurs = 20 s ;
+    en parallèle, ~2 s au total quel que soit leur nombre."""
+    from concurrent.futures import ThreadPoolExecutor
+
     try:
         with _client() as c:
             raw = c.get("/containers/json", params={"all": "true"}).json()
             out = []
             for ct in raw:
-                item = {
+                out.append({
                     "id": ct["Id"][:12],
+                    "full_id": ct["Id"],
                     "name": (ct.get("Names") or ["?"])[0].lstrip("/"),
                     "image": ct.get("Image", ""),
                     "state": ct.get("State", "unknown"),      # running/exited/restarting…
@@ -52,13 +59,23 @@ def list_containers(with_stats: bool = False) -> list[dict]:
                     "cpu_percent": None,
                     "mem_percent": None,
                     "mem_usage_mb": None,
-                }
-                if with_stats and item["state"] == "running":
+                })
+
+            if with_stats:
+                running = [item for item in out if item["state"] == "running"]
+
+                def fetch(item: dict) -> None:
                     try:
-                        item.update(_stats(c, ct["Id"]))
+                        item.update(_stats(c, item["full_id"]))  # httpx.Client est thread-safe
                     except Exception:  # noqa: BLE001 — stats best-effort
                         pass
-                out.append(item)
+
+                if running:
+                    with ThreadPoolExecutor(max_workers=min(16, len(running))) as pool:
+                        list(pool.map(fetch, running))
+
+            for item in out:
+                item.pop("full_id", None)
             order = {"exited": 0, "dead": 0, "restarting": 1, "paused": 2, "running": 3}
             out.sort(key=lambda x: (order.get(x["state"], 2), x["name"]))
             return out

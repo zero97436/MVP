@@ -24,15 +24,25 @@ export default function ContainersPage() {
   const [refreshing, setRefreshing] = useState(false);
 
   const load = async () => {
+    // Stats CPU/RAM (l'API Docker met ~2 s à les échantillonner).
     const { data } = await listContainers(true);
     setAvailable(data.available);
     setError(data.error);
     setContainers(data.containers);
   };
   useEffect(() => {
-    load().finally(() => setLoading(false));
+    // Affichage immédiat (états sans stats), puis hydratation avec CPU/RAM.
+    listContainers(false)
+      .then((r) => {
+        setAvailable(r.data.available);
+        setError(r.data.error);
+        setContainers(r.data.containers);
+      })
+      .finally(() => setLoading(false));
+    load();
     const t = setInterval(load, 30000);
     return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const refresh = async () => {
