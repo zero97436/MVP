@@ -47,11 +47,14 @@ class TicketService:
 
     def config(self) -> dict:
         """État de l'intégration (sans secrets)."""
+        from app.core.license import has_feature
+
         return {
             "provider": settings.ITSM_PROVIDER,
             "configured": bool(settings.ITSM_PROVIDER == "internal" or settings.ITSM_URL),
             "auto_create": settings.ITSM_AUTO_CREATE,
             "target": settings.ITSM_URL or "local",
+            "connectors_licensed": has_feature("itsm_connectors"),
         }
 
     # ---- écriture ----
@@ -74,6 +77,11 @@ class TicketService:
         self.db.refresh(ticket)
 
         if provider != "internal":
+            from app.core.license import has_feature
+
+            if not has_feature("itsm_connectors"):
+                logger.info("Push ITSM (%s) ignoré : plan sans connecteurs ITSM (Business requis)", provider)
+                return ticket
             try:
                 ext_id, ext_url = self._push(provider, ticket)
                 ticket.external_id = ext_id

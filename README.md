@@ -19,7 +19,7 @@ commande avec Docker Compose.
 
 ## Table des matières
 
-1. [Éditions : Community vs Enterprise](#-éditions--community-vs-enterprise-open-core)
+1. [Éditions](#-éditions-open-core--community--professional--business--enterprise)
 2. [Fonctionnalités](#-fonctionnalités)
 3. [Architecture](#-architecture)
 4. [Installation](#-installation)
@@ -43,31 +43,40 @@ commande avec Docker Compose.
 
 ---
 
-## 💰 Éditions : Community vs Enterprise (open-core)
+## 💰 Éditions (open-core) : Community · Professional · Business · Enterprise
 
-La supervision complète est **gratuite et sans limite d'hôtes**. Les revenus viennent
-des fonctionnalités dont les grandes organisations ont besoin — même modèle que
-GitLab ou Grafana.
+Une édition **Community généreuse** pour l'adoption, des plans payants alignés sur
+la maturité de l'organisation. Chaque plan **inclut tout ce qui précède**.
 
-| | **Community** (gratuite, défaut) | **Enterprise** (licence) |
-|---|---|---|
-| **Hôtes supervisés** | ✅ **illimités** | ✅ illimités |
-| 26 types de checks, agent, découverte, templates | ✅ | ✅ |
-| Alerting complet (8 canaux, escalades, flapping, dépendances) | ✅ | ✅ |
-| Tickets ITSM (auto + Jira/ServiceNow) | ✅ | ✅ |
-| Dashboards, cartes, rapports PDF, APM, mode TV, statut public | ✅ | ✅ |
-| Assistant IA, migration Nagios/CSV | ✅ | ✅ |
-| Utilisateurs / rôles | ✅ illimités | ✅ illimités |
-| **SSO / SAML** (annuaire d'entreprise) | — | ✅ *(roadmap)* |
-| **Haute disponibilité** (HA) | — | ✅ *(roadmap)* |
-| **Multi-tenant MSP** (plusieurs clients isolés) | — | ✅ *(roadmap)* |
-| **Journal d'audit / conformité** | — | ✅ *(roadmap)* |
-| **Support éditeur avec SLA** | communauté | ✅ |
+### 🆓 Community (gratuite, sans clé)
+✅ **Jusqu'à 500 hôtes** · les 26 types de checks · dashboard complet · cartographie
+(topologie + carte géographique) · historique · graphes de disponibilité · alertes
+**e-mail + webhook** · maintenance, dépendances, flapping, escalades · agent
+Windows/Linux · découverte réseau · templates · migration Nagios/CSV · tickets
+internes · API REST · **assistant IA local** (analyse d'incident + chat — l'élément
+différenciant reste gratuit) · mode TV · page de statut publique.
 
-- **Sans clé de licence**, vous avez l'édition Community : tout le moteur de
-  supervision, sans plafond, pour toujours.
-- Une clé Enterprise active les fonctionnalités correspondantes (`features` gravées
-  dans la clé, validées hors-ligne par signature Ed25519).
+### 💼 Professional — *ajoute :*
+✅ Canaux de notification avancés (**Slack, Teams, Discord, Telegram, SMS, script**)
+· rapports **SLA / MTTR** · **export PDF** · **dashboards personnalisables** par
+utilisateur · rétention étendue · personnalisation de marque · support par e-mail.
+
+### 🏢 Business — *ajoute :*
+✅ Connecteurs **ITSM** (Jira, ServiceNow, webhook sortant) · **automatisation de
+remédiation** (actions agent + plans IA) · **supervision distribuée** (checks
+exécutés par les sondes/agents) · multi-sites/multi-clients *(roadmap)* · API étendue.
+
+### 🏛️ Enterprise — *ajoute :*
+✅ **Haute disponibilité** *(roadmap)* · **SSO / SAML** *(roadmap)* · journal
+d'**audit / conformité** *(roadmap)* · support **24/7**, formation, développement
+spécifique, accompagnement.
+
+**Fonctionnement :**
+- Sans clé : édition Community, pour toujours. Au-delà d'une limite de plan, l'action
+  est refusée avec un message clair indiquant le plan requis — **rien ne s'arrête**,
+  la supervision existante continue.
+- La clé de licence porte le plan (validée hors-ligne, signature Ed25519) ; les
+  fonctionnalités se débloquent instantanément, sans réinstallation.
 - Pour activer : voir [Licence](#-licence--activer-la-version-payante).
 
 ---

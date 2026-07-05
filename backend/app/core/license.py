@@ -1,21 +1,16 @@
-"""Licence — modèle open-core.
+"""Licence — modèle open-core à 4 plans cumulatifs.
 
-Édition **Community** (sans clé) : toutes les fonctionnalités de supervision,
-hôtes ILLIMITÉS. Édition **Enterprise** (clé signée) : débloque les
-fonctionnalités enterprise (SSO, HA, multi-tenant MSP, conformité…) et le support.
+  Community    (défaut, gratuit) : 500 hôtes, checks, dashboard, cartes, alertes
+                e-mail/webhook, agent, API, IA locale (analyse + chat).
+  Professional : canaux avancés (Slack/Teams/Discord/Telegram/SMS), rapports
+                 SLA/MTTR + PDF, dashboards personnalisables, rétention étendue.
+  Business     : connecteurs ITSM (Jira/ServiceNow), automatisation de
+                 remédiation, supervision distribuée (sondes), multi-sites.
+  Enterprise   : HA, SSO, audit/conformité, support 24/7.
 
-Signature asymétrique Ed25519 :
-  - la clé PUBLIQUE ci-dessous vérifie les licences (sans danger dans un dépôt public) ;
-  - la clé PRIVÉE reste chez l'éditeur (scripts/generate_license.py, jamais distribuée).
-
-Format de clé : base64url(payload_json) + "." + signature_ed25519_hex
-payload : {"plan": "enterprise", "customer": "...", "features": ["sso", "ha"],
-           "max_hosts": null, "expires": "2027-01-01"}
-  - features  : fonctionnalités enterprise débloquées (voir ENTERPRISE_FEATURES)
-  - max_hosts : optionnel (null/absent = illimité) — réservé aux accords OEM
-  - expires   : optionnel (absent = perpétuelle)
-
-Une clé invalide, falsifiée ou expirée est ignorée -> retour à Community.
+La clé de licence porte le plan ; les features en découlent (cumulatif).
+Signature Ed25519 : clé publique embarquée (vérification), clé privée chez
+l'éditeur. Clé absente/invalide/expirée -> Community (rien ne s'arrête).
 """
 from __future__ import annotations
 
@@ -25,18 +20,67 @@ from datetime import date
 from functools import lru_cache
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+from fastapi import HTTPException
 
 from app.core.config import settings
 
 # Clé publique Ed25519 de l'éditeur (vérification uniquement).
 PUBLIC_KEY_HEX = "3e3884b11f4bdded21a6b42885fd0e7944db37c2e5da7e501d75b9ec74894cfe"
 
-# Fonctionnalités enterprise connues (les clés peuvent en activer un sous-ensemble).
-ENTERPRISE_FEATURES = {"sso", "ha", "multi_tenant", "audit", "support"}
+# Features par plan (chaque plan inclut les précédents).
+_PRO = {
+    "advanced_channels",   # Slack, Teams, Discord, Telegram, SMS, script
+    "sla_reports",         # rapports SLA / MTTR
+    "pdf_reports",         # export PDF
+    "custom_dashboards",   # dashboards personnalisables par utilisateur
+    "extended_retention",  # rétention étendue
+    "branding",            # personnalisation de marque
+}
+_BUSINESS = _PRO | {
+    "itsm_connectors",     # push Jira / ServiceNow / webhook
+    "remediation",         # automatisation de remédiation (agent + plans IA)
+    "distributed",         # supervision distribuée (checks exécutés par les sondes)
+    "multi_site",          # multi-sites / multi-clients (roadmap)
+    "api_extended",
+}
+_ENTERPRISE = _BUSINESS | {"ha", "sso", "audit", "support_247"}
+
+PLAN_FEATURES: dict[str, set[str]] = {
+    "community": set(),
+    "professional": _PRO,
+    "business": _BUSINESS,
+    "enterprise": _ENTERPRISE,
+}
+PLAN_ORDER = ["community", "professional", "business", "enterprise"]
+ALL_FEATURES = _ENTERPRISE
+
+# Plan minimal requis par feature (pour les messages d'upgrade).
+FEATURE_PLAN: dict[str, str] = {}
+for _plan in PLAN_ORDER:
+    for _f in PLAN_FEATURES[_plan]:
+        FEATURE_PLAN.setdefault(_f, _plan)
+
+FEATURE_LABEL = {
+    "advanced_channels": "canaux de notification avancés (Slack, Teams, Telegram…)",
+    "sla_reports": "rapports SLA / MTTR",
+    "pdf_reports": "export PDF",
+    "custom_dashboards": "dashboards personnalisables",
+    "extended_retention": "rétention étendue",
+    "branding": "personnalisation de marque",
+    "itsm_connectors": "connecteurs ITSM (Jira, ServiceNow)",
+    "remediation": "automatisation de remédiation",
+    "distributed": "supervision distribuée",
+    "multi_site": "multi-sites / multi-clients",
+    "api_extended": "API étendue",
+    "ha": "haute disponibilité",
+    "sso": "SSO / SAML",
+    "audit": "journal d'audit",
+    "support_247": "support 24/7",
+}
 
 COMMUNITY_PLAN = {
     "plan": "community",
-    "max_hosts": None,  # illimité
+    "max_hosts": 500,
     "features": [],
     "customer": None,
     "expires": None,
@@ -63,14 +107,19 @@ def _cached_license(key: str) -> dict:
     payload = _verify(key) if key else None
     if not payload:
         return dict(COMMUNITY_PLAN)
-    max_hosts = payload.get("max_hosts")
+    plan = payload.get("plan", "professional")
+    if plan not in PLAN_FEATURES:
+        plan = "professional"
+    features = set(PLAN_FEATURES[plan])
+    # Features additionnelles explicites (vente à la carte / OEM).
+    features |= {f for f in payload.get("features", []) if f in ALL_FEATURES}
+    max_hosts = payload.get("max_hosts")  # None/absent = illimité (plans payants)
     if max_hosts is not None and (not isinstance(max_hosts, int) or max_hosts < 1):
         max_hosts = None
-    features = [f for f in payload.get("features", []) if f in ENTERPRISE_FEATURES]
     return {
-        "plan": payload.get("plan", "enterprise"),
+        "plan": plan,
         "max_hosts": max_hosts,
-        "features": features,
+        "features": sorted(features),
         "customer": payload.get("customer"),
         "expires": payload.get("expires"),
     }
@@ -81,10 +130,23 @@ def get_license() -> dict:
 
 
 def has_feature(name: str) -> bool:
-    """À utiliser pour conditionner les futures fonctionnalités enterprise."""
     return name in get_license()["features"]
 
 
 def max_hosts() -> int | None:
     """None = illimité."""
     return get_license()["max_hosts"]
+
+
+def require_feature(feature: str):
+    """Dépendance FastAPI : 403 avec message d'upgrade si la feature manque."""
+    def dep() -> None:
+        if not has_feature(feature):
+            plan = FEATURE_PLAN.get(feature, "professional").capitalize()
+            label = FEATURE_LABEL.get(feature, feature)
+            raise HTTPException(
+                403,
+                f"Fonctionnalité « {label} » disponible à partir du plan {plan}. "
+                f"Plan actuel : {get_license()['plan']}.",
+            )
+    return dep

@@ -30,6 +30,18 @@ def list_channels(db: Session = Depends(get_db)):
     dependencies=[Depends(require_admin)],
 )
 def create_channel(payload: NotificationChannelCreate, db: Session = Depends(get_db)):
+    # Community : e-mail + webhook. Les autres canaux relèvent du plan Professional.
+    from app.core.license import has_feature
+
+    ch_type = payload.type.value if hasattr(payload.type, "value") else payload.type
+    if ch_type not in ("email", "webhook") and not has_feature("advanced_channels"):
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            403,
+            f"Canal « {ch_type} » disponible à partir du plan Professional "
+            "(Community : e-mail et webhook).",
+        )
     data = payload.model_dump()
     data["type"] = data["type"].value if hasattr(data["type"], "value") else data["type"]
     data["config_json"] = encrypt_config(data.get("config_json"))

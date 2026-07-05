@@ -21,18 +21,12 @@ def _make_key(payload: dict) -> str:
 
 
 def test_default_community_plan(client):
-    """Sans clé : édition Community — hôtes ILLIMITÉS, pas de features enterprise."""
+    """Sans clé : édition Community — 500 hôtes, pas de features payantes."""
     lic = client.get("/api/hosts/license").json()
     assert lic["plan"] == "community"
-    assert lic["max_hosts"] is None       # illimité
+    assert lic["max_hosts"] == 500
     assert lic["features"] == []
     assert isinstance(lic["used"], int)
-
-
-def test_community_has_no_host_limit(client):
-    """La création d'hôtes n'est jamais bloquée en Community."""
-    r = client.post("/api/hosts", json={"name": "libre-1", "hostname_or_ip": "10.0.2.200"})
-    assert r.status_code == 201
 
 
 def test_host_limit_enforced(client, monkeypatch):
@@ -61,18 +55,26 @@ def test_valid_license_key_raises_limit(monkeypatch):
     from app.core.config import settings as cfg
 
     monkeypatch.setattr(lic_mod, "PUBLIC_KEY_HEX", _TEST_PUB_HEX)
-    key = _make_key({"plan": "enterprise", "customer": "ACME",
-                     "features": ["sso", "ha", "support", "inconnue"]})
+    # Les features découlent du plan (cumulatif).
+    key = _make_key({"plan": "professional", "customer": "ACME"})
     monkeypatch.setattr(cfg, "LICENSE_KEY", key)
     lic = get_license()
-    assert lic["plan"] == "enterprise" and lic["customer"] == "ACME"
-    assert lic["max_hosts"] is None                      # illimité par défaut
-    assert set(lic["features"]) == {"sso", "ha", "support"}  # features inconnues filtrées
+    assert lic["plan"] == "professional" and lic["customer"] == "ACME"
+    assert lic["max_hosts"] is None                      # illimité (plans payants)
+    assert "sla_reports" in lic["features"]              # feature Pro incluse
+    assert "itsm_connectors" not in lic["features"]      # feature Business absente
 
-    # has_feature() pour conditionner le code enterprise.
-    from app.core.license import has_feature
-    assert has_feature("sso") is True
-    assert has_feature("multi_tenant") is False
+    # Business inclut Pro + ses propres features.
+    biz = _make_key({"plan": "business", "customer": "ACME"})
+    monkeypatch.setattr(cfg, "LICENSE_KEY", biz)
+    feats = set(get_license()["features"])
+    assert {"sla_reports", "itsm_connectors", "remediation"} <= feats
+    assert "sso" not in feats                            # Enterprise seulement
+
+    # Feature à la carte en plus du plan.
+    alacarte = _make_key({"plan": "professional", "features": ["sso"]})
+    monkeypatch.setattr(cfg, "LICENSE_KEY", alacarte)
+    assert "sso" in get_license()["features"]
 
     # Plafond OEM optionnel.
     oem = _make_key({"plan": "oem", "max_hosts": 500, "customer": "OEM Corp"})

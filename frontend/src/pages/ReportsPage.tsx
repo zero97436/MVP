@@ -30,15 +30,21 @@ export default function ReportsPage() {
   const [sla, setSla] = useState<SlaReport | null>(null);
   const [mttr, setMttr] = useState<MttrReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [proOnly, setProOnly] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { data: checks } = await listChecks();
       const res = await Promise.all(checks.slice(0, 30).map((c: Check) => listResults(c.id, 500)));
       setResults(res.flatMap((r) => r.data));
-      const [s, m] = await Promise.all([getSlaReport(30), getMttrReport(30)]);
-      setSla(s.data);
-      setMttr(m.data);
+      try {
+        const [s, m] = await Promise.all([getSlaReport(30), getMttrReport(30)]);
+        setSla(s.data);
+        setMttr(m.data);
+      } catch (e: unknown) {
+        const status = (e as { response?: { status?: number } })?.response?.status;
+        if (status === 403) setProOnly(true);
+      }
       setLoading(false);
     })();
   }, []);
@@ -59,6 +65,10 @@ export default function ReportsPage() {
       a.download = "rapport-supervision-30j.pdf";
       a.click();
       URL.revokeObjectURL(url);
+    } catch (e: unknown) {
+      if ((e as { response?: { status?: number } })?.response?.status === 403) {
+        alert("Export PDF disponible à partir du plan Professional.");
+      }
     } finally {
       setExporting(false);
     }
@@ -77,6 +87,14 @@ export default function ReportsPage() {
           </button>
         }
       />
+
+      {proOnly && (
+        <div className="card border-l-4 border-brand bg-brand/5 p-4 text-sm text-ink">
+          ⭐ Les rapports <b>SLA / MTTR</b> et l'<b>export PDF</b> sont disponibles à partir du
+          plan <b>Professional</b>. Les graphes de disponibilité ci-dessous restent inclus
+          dans l'édition Community.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <MetricCard label="Disponibilité globale" value={formatPercent(avail, 2)} icon={Gauge} accent={avail >= 99 ? "ok" : avail >= 95 ? "warning" : "critical"} />

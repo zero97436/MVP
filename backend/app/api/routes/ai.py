@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from typing import Any
 
+from app.core.license import require_feature
 from app.api.deps import get_current_user, require_operator
 from app.db.session import get_db
 from app.services.ai_service import AIService, OllamaError
@@ -36,7 +37,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)):
         raise HTTPException(503, str(exc))
 
 
-@router.post("/apply-plan", dependencies=[Depends(require_operator)])
+@router.post("/apply-plan", dependencies=[Depends(require_operator), Depends(require_feature("remediation"))])
 def apply_plan(payload: ApplyPlanRequest, db: Session = Depends(get_db)):
     """Crée l'hôte + checks proposés par l'assistant (validé par un opérateur)."""
     try:

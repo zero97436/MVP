@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, require_operator
+from app.core.license import require_feature
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.dashboard import DashboardSummary, IncidentOut
@@ -64,7 +65,7 @@ def get_layout(user: User = Depends(get_current_user), db: Session = Depends(get
     return {"sections": merged, "custom": True}
 
 
-@router.put("/layout")
+@router.put("/layout", dependencies=[Depends(require_feature("custom_dashboards"))])
 def save_layout(payload: LayoutIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     from app.models.dashboard_pref import DashboardPref
     from sqlalchemy import select
@@ -125,7 +126,7 @@ def ai_summary(db: Session = Depends(get_db)):
         raise HTTPException(503, str(exc))
 
 
-@router.post("/incidents/{alert_id}/remediate")
+@router.post("/incidents/{alert_id}/remediate", dependencies=[Depends(require_feature("remediation"))])
 def remediate_incident(
     alert_id: int,
     payload: RemediateRequest,

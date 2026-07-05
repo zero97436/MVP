@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, require_operator
+from app.core.license import has_feature
 from app.db.session import get_db
 from app.repositories.check_repo import CheckRepository
 from app.repositories.host_repo import HostRepository
@@ -21,6 +22,8 @@ def list_checks(host_id: int | None = None, db: Session = Depends(get_db)):
 def create_check(payload: CheckCreate, db: Session = Depends(get_db)):
     if not HostRepository(db).get(payload.host_id):
         raise HTTPException(400, "host_id does not exist")
+    if payload.executor_host_id and not has_feature("distributed"):
+        raise HTTPException(403, "Supervision distribuée (sondes) disponible à partir du plan Business.")
     data = payload.model_dump()
     data["type"] = data["type"].value if hasattr(data["type"], "value") else data["type"]
     return CheckRepository(db).create(**data)

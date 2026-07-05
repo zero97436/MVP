@@ -156,9 +156,16 @@ export default function DashboardPage() {
     setLayout(next);
   };
   const saveLayout = async () => {
-    await saveDashboardLayout(layout);
-    setSavedLayout(layout);
-    setCustomize(false);
+    try {
+      await saveDashboardLayout(layout);
+      setSavedLayout(layout);
+      setCustomize(false);
+    } catch (e: unknown) {
+      if ((e as { response?: { status?: number } })?.response?.status === 403) {
+        alert("Dashboards personnalisables : disponibles à partir du plan Professional.");
+        cancelLayout();
+      }
+    }
   };
   const cancelLayout = () => {
     setLayout(savedLayout);

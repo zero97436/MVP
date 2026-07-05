@@ -61,6 +61,20 @@ def _override_get_db():
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(autouse=True)
+def _full_license(monkeypatch):
+    """Par défaut, les tests tournent en licence Enterprise (toutes features).
+
+    Les tests du gating de licence rétablissent Community explicitement."""
+    import app.core.license as lic
+
+    monkeypatch.setattr(lic, "get_license", lambda: {
+        "plan": "enterprise", "max_hosts": None,
+        "features": sorted(lic.ALL_FEATURES), "customer": "tests", "expires": None,
+    })
+    yield
+
+
 @pytest.fixture
 def admin(db):
     user = db.query(User).filter_by(email="admin@local").first()
