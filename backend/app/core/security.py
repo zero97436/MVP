@@ -15,7 +15,10 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    try:
+        return pwd_context.verify(plain, hashed)
+    except Exception:  # noqa: BLE001 — hash sentinelle (comptes SSO) ou corrompu
+        return False
 
 
 def create_access_token(subject: str, expires_minutes: int | None = None) -> str:

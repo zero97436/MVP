@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, LogIn } from "lucide-react";
+import { Loader2, LogIn, KeyRound } from "lucide-react";
+import { api, tokenStore } from "../api/client";
 import { BrandLogo } from "../components/ui/BrandLogo";
 import { useBranding } from "../lib/branding";
 import { useAuth } from "../lib/auth";
@@ -14,6 +15,22 @@ export default function LoginPage() {
   const [password, setPassword] = useState("admin1234");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [ssoEnabled, setSsoEnabled] = useState(false);
+
+  // SSO : bouton si activé côté serveur + réception du token au retour du fournisseur.
+  useEffect(() => {
+    api.get<{ enabled: boolean }>("/auth/sso/info").then((r) => setSsoEnabled(r.data.enabled)).catch(() => {});
+    const params = new URLSearchParams(window.location.search);
+    const ssoToken = params.get("sso_token");
+    const ssoError = params.get("sso_error");
+    if (ssoToken) {
+      tokenStore.set(ssoToken);
+      window.location.replace("/dashboard");
+    } else if (ssoError) {
+      setError(`SSO : ${ssoError}`);
+      window.history.replaceState(null, "", "/login");
+    }
+  }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +88,17 @@ export default function LoginPage() {
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
           {loading ? "Connexion..." : "Se connecter"}
         </button>
+
+        {ssoEnabled && (
+          <>
+            <div className="my-4 flex items-center gap-3 text-[11px] uppercase tracking-wide text-ink-faint">
+              <span className="h-px flex-1 bg-border" /> ou <span className="h-px flex-1 bg-border" />
+            </div>
+            <a href="/api/auth/sso/login" className="btn-ghost w-full justify-center py-2.5">
+              <KeyRound className="h-4 w-4" /> Connexion entreprise (SSO)
+            </a>
+          </>
+        )}
       </motion.form>
     </div>
   );

@@ -63,6 +63,14 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "llama3.1:8b"
     OLLAMA_TIMEOUT_SECONDS: int = 120
 
+    # --- SSO / OIDC (Enterprise) ---
+    # Compatible Keycloak, Azure AD/Entra, Google Workspace, Okta, Authentik…
+    OIDC_ISSUER: str = ""          # ex. https://keycloak.acme.fr/realms/acme
+    OIDC_CLIENT_ID: str = ""
+    OIDC_CLIENT_SECRET: str = ""
+    SSO_DEFAULT_ROLE: str = "viewer"     # rôle des comptes créés via SSO
+    SSO_AUTO_CREATE_USERS: bool = True   # créer le compte au 1er login SSO
+
     # --- Licence ---
     # Vide = version gratuite (100 hôtes max). Clé signée = limite étendue.
     LICENSE_KEY: str = ""
