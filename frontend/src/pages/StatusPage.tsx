@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, AlertTriangle, XCircle, HelpCircle, RefreshCw } from "lucide-react";
-import { Logo } from "../components/ui/Logo";
+import { BrandLogo } from "../components/ui/BrandLogo";
+import { useBranding } from "../lib/branding";
 import { api } from "../api/client";
 import { cn } from "../lib/cn";
 
@@ -33,6 +34,7 @@ const BANNER = {
 } as const;
 
 export default function StatusPage() {
+  const { branding } = useBranding();
   const [data, setData] = useState<PublicStatus | null>(null);
   const [error, setError] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
@@ -79,7 +81,7 @@ export default function StatusPage() {
         {/* En-tête */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <Logo className="h-9 w-9" />
+            <BrandLogo className="h-9 w-9" />
             <h1 className="text-lg font-bold">{data.title}</h1>
           </div>
           {updatedAt && (
@@ -138,7 +140,7 @@ export default function StatusPage() {
         )}
 
         <p className="pt-4 text-center text-xs text-ink-faint">
-          Actualisation automatique toutes les 30 s · propulsé par Opsora
+          Actualisation automatique toutes les 30 s · propulsé par {branding.display_name}
         </p>
       </div>
     </div>

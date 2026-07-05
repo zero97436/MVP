@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 :root {
+  /* Couleur d'accent — surchargée par le branding (plan Professional). */
+  --brand-rgb: 59 130 246;
+  --brand-soft-rgb: 29 78 216;
+}
+
+:root {
   color-scheme: dark;
 }
 

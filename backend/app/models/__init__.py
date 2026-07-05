@@ -16,11 +16,13 @@ from app.models.ticket import Ticket, TicketComment, TicketTask
 from app.models.apm_sample import ApmSample
 from app.models.dashboard_pref import DashboardPref
 from app.models.check_template import CheckTemplate
+from app.models.branding import Branding
 
 __all__ = [
     "ApmSample",
     "DashboardPref",
     "CheckTemplate",
+    "Branding",
     "Ticket",
     "TicketTask",
     "TicketComment",

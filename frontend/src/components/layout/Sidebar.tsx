@@ -22,7 +22,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
-import { Logo } from "../ui/Logo";
+import { BrandLogo } from "../ui/BrandLogo";
+import { useBranding } from "../../lib/branding";
 
 interface NavItem {
   to: string;
@@ -57,6 +58,7 @@ export function Sidebar({
   collapsed: boolean;
   onToggle: () => void;
 }) {
+  const { branding } = useBranding();
   return (
     <motion.aside
       animate={{ width: collapsed ? 72 : 240 }}
@@ -64,10 +66,10 @@ export function Sidebar({
       className="relative z-20 flex shrink-0 flex-col border-r border-border bg-bg-soft"
     >
       <div className="flex h-14 items-center gap-2 px-4">
-        <Logo className="h-8 w-8 shrink-0" />
+        <BrandLogo className="h-8 w-8" />
         {!collapsed && (
           <span className="truncate text-sm font-semibold tracking-tight text-ink">
-            Opsora
+            {branding.display_name}
           </span>
         )}
       </div>

@@ -5,6 +5,7 @@ import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Loading } from "./components/States";
 import LoginPage from "./pages/LoginPage";
+import { BrandingProvider } from "./lib/branding";
 
 // Code splitting : chaque page est chargée à la demande.
 const StatusPage = lazy(() => import("./pages/StatusPage"));
@@ -31,6 +32,7 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
 export default function App() {
   return (
+    <BrandingProvider>
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -75,5 +77,6 @@ export default function App() {
         </Route>
       </Routes>
     </AuthProvider>
+    </BrandingProvider>
   );
 }

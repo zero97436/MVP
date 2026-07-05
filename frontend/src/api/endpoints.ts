@@ -365,6 +365,19 @@ export const getSystemHealth = () => api.get<SystemHealth>("/admin/system");
 export const runRetention = () =>
   api.post<{ deleted: Record<string, number>; total: number }>("/admin/retention/run");
 
+// --- Branding (plan Professional) ---
+export interface BrandingSettings {
+  display_name: string;
+  tagline: string;
+  logo_url: string | null;
+  accent_color: string | null;
+  custom: boolean;
+}
+export const getBrandingSettings = () => api.get<BrandingSettings>("/branding");
+export const saveBranding = (data: { display_name?: string; tagline?: string; logo_url?: string | null; accent_color?: string | null }) =>
+  api.put<BrandingSettings>("/branding", data);
+export const resetBranding = () => api.delete("/branding");
+
 // --- Settings ---
 export const listChannels = () =>
   api.get<NotificationChannel[]>("/settings/notification-channels");

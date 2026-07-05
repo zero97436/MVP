@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Loader2, LogIn } from "lucide-react";
-import { Logo } from "../components/ui/Logo";
+import { BrandLogo } from "../components/ui/BrandLogo";
+import { useBranding } from "../lib/branding";
 import { useAuth } from "../lib/auth";
 
 export default function LoginPage() {
+  const { branding } = useBranding();
   const { login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("admin@local");
@@ -42,12 +44,12 @@ export default function LoginPage() {
       >
         <div className="mb-6 flex items-center gap-3">
           <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/15 text-brand">
-            <Logo className="h-9 w-9" />
+            <BrandLogo className="h-9 w-9" />
           </span>
           <div>
             <div>
-              <h1 className="text-lg font-semibold text-ink">Opsora</h1>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-ink-faint">Surveillez. Comprenez. Agissez.</p>
+              <h1 className="text-lg font-semibold text-ink">{branding.display_name}</h1>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-ink-faint">{branding.tagline}</p>
             </div>
             <p className="text-xs text-ink-faint">Plateforme de supervision</p>
           </div>

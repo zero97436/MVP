@@ -38,6 +38,7 @@ const CHANNEL_ICON: Record<ChannelType, typeof Mail> = {
 };
 import { formatDate } from "../lib/format";
 import { PageHeader } from "../components/ui/PageHeader";
+import { BrandingPanel } from "../components/BrandingPanel";
 import { Card, SectionTitle } from "../components/ui/Card";
 import { EmptyState, ErrorState, Loading } from "../components/States";
 import { SystemHealthCard } from "../components/SystemHealthCard";
@@ -141,6 +142,8 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Settings" subtitle="Canaux de notification, utilisateurs et préférences" />
+
+      <BrandingPanel />
 
       {admin && <SystemHealthCard />}
 

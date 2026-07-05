@@ -29,8 +29,9 @@ export default {
           info: "#3B82F6",
         },
         brand: {
-          DEFAULT: "#3B82F6",
-          soft: "#1D4ED8",
+          // Surchargeable par le branding (plan Professional) via variables CSS.
+          DEFAULT: "rgb(var(--brand-rgb, 59 130 246) / <alpha-value>)",
+          soft: "rgb(var(--brand-soft-rgb, 29 78 216) / <alpha-value>)",
         },
       },
       boxShadow: {
