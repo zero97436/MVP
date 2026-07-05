@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Satellite, Loader2, LogIn } from "lucide-react";
+import { Loader2, LogIn } from "lucide-react";
+import { Logo } from "../components/ui/Logo";
 import { useAuth } from "../lib/auth";
 
 export default function LoginPage() {
@@ -41,10 +42,13 @@ export default function LoginPage() {
       >
         <div className="mb-6 flex items-center gap-3">
           <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/15 text-brand">
-            <Satellite className="h-5 w-5" />
+            <Logo className="h-9 w-9" />
           </span>
           <div>
-            <h1 className="text-lg font-semibold text-ink">Opsora</h1>
+            <div>
+              <h1 className="text-lg font-semibold text-ink">Opsora</h1>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-ink-faint">Surveillez. Comprenez. Agissez.</p>
+            </div>
             <p className="text-xs text-ink-faint">Plateforme de supervision</p>
           </div>
         </div>

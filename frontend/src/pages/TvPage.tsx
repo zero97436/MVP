@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle2, X, Satellite } from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
+import { Logo } from "../components/ui/Logo";
 import { getIncidents, getSummary, listChecks, listHosts } from "../api/endpoints";
 import type { Check, CheckStatus, DashboardSummary, Host, Incident } from "../types";
 import { buildHostViews } from "../lib/fleet";
@@ -51,7 +52,7 @@ export default function TvPage() {
       {/* En-tête : titre + horloge géante + sortie */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 text-ink-soft">
-          <Satellite className="h-7 w-7 text-brand" />
+          <Logo className="h-9 w-9" />
           <span className="text-xl font-bold tracking-tight">Opsora</span>
         </div>
         <span className="text-5xl font-bold tabular-nums tracking-tight">

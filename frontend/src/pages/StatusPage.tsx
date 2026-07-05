@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, AlertTriangle, XCircle, HelpCircle, Satellite, RefreshCw } from "lucide-react";
+import { CheckCircle2, AlertTriangle, XCircle, HelpCircle, RefreshCw } from "lucide-react";
+import { Logo } from "../components/ui/Logo";
 import { api } from "../api/client";
 import { cn } from "../lib/cn";
 
@@ -78,9 +79,7 @@ export default function StatusPage() {
         {/* En-tête */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/15 text-brand">
-              <Satellite className="h-5 w-5" />
-            </span>
+            <Logo className="h-9 w-9" />
             <h1 className="text-lg font-bold">{data.title}</h1>
           </div>
           {updatedAt && (

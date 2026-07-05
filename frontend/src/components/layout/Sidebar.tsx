@@ -18,11 +18,11 @@ import {
   History,
   Bot,
   Settings,
-  Satellite,
   ChevronLeft,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { Logo } from "../ui/Logo";
 
 interface NavItem {
   to: string;
@@ -64,9 +64,7 @@ export function Sidebar({
       className="relative z-20 flex shrink-0 flex-col border-r border-border bg-bg-soft"
     >
       <div className="flex h-14 items-center gap-2 px-4">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand/15 text-brand">
-          <Satellite className="h-4 w-4" />
-        </span>
+        <Logo className="h-8 w-8 shrink-0" />
         {!collapsed && (
           <span className="truncate text-sm font-semibold tracking-tight text-ink">
             Opsora
