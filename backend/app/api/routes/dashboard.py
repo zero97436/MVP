@@ -21,13 +21,13 @@ router = APIRouter(
 
 
 @router.get("/summary", response_model=DashboardSummary)
-def summary(db: Session = Depends(get_db)):
-    return DashboardService(db).summary()
+def summary(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    return DashboardService(db, user).summary()
 
 
 @router.get("/incidents", response_model=list[IncidentOut])
-def incidents(db: Session = Depends(get_db)):
-    return DashboardService(db).incidents()
+def incidents(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    return DashboardService(db, user).incidents()
 
 
 # --- Dashboard personnalisable (ordre + visibilité des sections, par utilisateur) ---
@@ -99,6 +99,7 @@ def acknowledge_incident(
     db: Session = Depends(get_db),
     user: User = Depends(require_operator),
 ):
+    _assert_alert_visible(db, user, alert_id)
     alert = DashboardService(db).acknowledge(alert_id, user.email, ack=True)
     if not alert:
         raise HTTPException(404, "Alert not found")
@@ -111,6 +112,7 @@ def unacknowledge_incident(
     db: Session = Depends(get_db),
     user: User = Depends(require_operator),
 ):
+    _assert_alert_visible(db, user, alert_id)
     alert = DashboardService(db).acknowledge(alert_id, user.email, ack=False)
     if not alert:
         raise HTTPException(404, "Alert not found")
@@ -153,6 +155,22 @@ def analyze_incident(alert_id: int, db: Session = Depends(get_db)):
     if result is None:
         raise HTTPException(404, "Alert not found")
     return result
+
+
+def _assert_alert_visible(db: Session, user: User, alert_id: int) -> None:
+    """404 si l'alerte appartient à un hôte hors du périmètre de l'utilisateur."""
+    from app.core.tenancy import host_visible, is_scoped
+    from app.models.alert import Alert
+    from app.models.check import Check
+    from app.models.host import Host
+
+    if not is_scoped(user):
+        return
+    alert = db.get(Alert, alert_id)
+    check = db.get(Check, alert.check_id) if alert else None
+    host = db.get(Host, check.host_id) if check else None
+    if not host_visible(user, host):
+        raise HTTPException(404, "Alert not found")
 
 
 def _incident_payload(db: Session, alert_id: int) -> dict:

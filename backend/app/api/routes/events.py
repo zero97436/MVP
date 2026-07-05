@@ -5,7 +5,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.core.tenancy import visible_host_ids
 from app.db.session import get_db
+from app.models.user import User
 from app.services.event_service import EventService
 
 router = APIRouter(prefix="/events", tags=["events"], dependencies=[Depends(get_current_user)])
@@ -33,5 +35,11 @@ def list_events(
     limit: int = 100,
     offset: int = 0,
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    return EventService(db).list(type=type, level=level, host_id=host_id, limit=limit, offset=offset)
+    rows = EventService(db).list(type=type, level=level, host_id=host_id, limit=limit, offset=offset)
+    allowed = visible_host_ids(db, user)
+    if allowed is not None:
+        # Cloisonné : uniquement les événements rattachés à un hôte du tenant.
+        rows = [e for e in rows if e.host_id in allowed]
+    return rows

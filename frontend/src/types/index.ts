@@ -37,6 +37,7 @@ export interface User {
   is_admin: boolean;
   role: UserRole;
   is_active?: boolean;
+  tenant_id?: number | null;
   created_at?: string;
 }
 
@@ -51,6 +52,7 @@ export interface Host {
   location?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  tenant_id?: number | null;
   created_at: string;
   updated_at: string;
 }

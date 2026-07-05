@@ -28,6 +28,7 @@ const ApmPage = lazy(() => import("./pages/ApmPage"));
 const ContainersPage = lazy(() => import("./pages/ContainersPage"));
 const EventsPage = lazy(() => import("./pages/EventsPage"));
 const AuditPage = lazy(() => import("./pages/AuditPage"));
+const TenantsPage = lazy(() => import("./pages/TenantsPage"));
 const ChatPage = lazy(() => import("./pages/ChatPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
@@ -69,6 +70,7 @@ export default function App() {
                   <Route path="/tickets" element={<TicketsPage />} />
                   <Route path="/events" element={<EventsPage />} />
                   <Route path="/audit" element={<AuditPage />} />
+                  <Route path="/tenants" element={<TenantsPage />} />
                   <Route path="/assistant" element={<ChatPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />

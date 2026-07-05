@@ -57,8 +57,24 @@ def config(db: Session = Depends(get_db)):
 
 
 @router.get("")
-def list_tickets(status: str | None = None, db: Session = Depends(get_db)):
-    return [_out(t) for t in TicketService(db).list(status=status)]
+def list_tickets(status: str | None = None, db: Session = Depends(get_db),
+                user=Depends(get_current_user)):
+    from app.core.tenancy import is_scoped, visible_host_ids
+    from app.models.check import Check
+
+    tickets = TicketService(db).list(status=status)
+    if is_scoped(user):
+        allowed = visible_host_ids(db, user)
+        # Un ticket est visible s'il n'est lié à aucune alerte, ou si l'hôte de
+        # son alerte appartient au tenant.
+        def visible(t):
+            if not t.alert_id:
+                return False  # tickets non rattachés = cachés aux tenants (créés par le MSP)
+            alert = db.get(Alert, t.alert_id)
+            check = db.get(Check, alert.check_id) if alert else None
+            return bool(check and check.host_id in allowed)
+        tickets = [t for t in tickets if visible(t)]
+    return [_out(t) for t in tickets]
 
 
 @router.post("", status_code=201, dependencies=[Depends(require_operator)])

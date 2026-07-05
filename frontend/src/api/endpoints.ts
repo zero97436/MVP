@@ -378,6 +378,23 @@ export const saveBranding = (data: { display_name?: string; tagline?: string; lo
   api.put<BrandingSettings>("/branding", data);
 export const resetBranding = () => api.delete("/branding");
 
+// --- Tenants (multi-tenant MSP, Business) ---
+export interface Tenant {
+  id: number;
+  name: string;
+  slug: string;
+  hosts: number;
+  users: number;
+}
+export const listTenants = () => api.get<Tenant[]>("/tenants");
+export const createTenant = (name: string, slug?: string) =>
+  api.post<{ id: number }>("/tenants", { name, slug });
+export const deleteTenant = (id: number) => api.delete(`/tenants/${id}`);
+export const assignHostTenant = (host_id: number, tenant_id: number | null) =>
+  api.post("/tenants/assign-host", { host_id, tenant_id });
+export const assignUserTenant = (user_id: number, tenant_id: number | null) =>
+  api.post("/tenants/assign-user", { user_id, tenant_id });
+
 // --- Audit (Enterprise) ---
 export interface AuditEntry {
   id: number;

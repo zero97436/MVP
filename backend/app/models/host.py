@@ -18,6 +18,10 @@ class Host(Base, TimestampMixin):
     parent_host_id: Mapped[int | None] = mapped_column(
         ForeignKey("hosts.id", ondelete="SET NULL"), index=True
     )
+    # Multi-tenant : tenant propriétaire (NULL = non assigné / partagé).
+    tenant_id: Mapped[int | None] = mapped_column(
+        ForeignKey("tenants.id", ondelete="SET NULL"), index=True
+    )
     # Vue géographique : site + coordonnées GPS (null = non placé sur la carte).
     location: Mapped[str | None] = mapped_column(String(255))
     latitude: Mapped[float | None] = mapped_column(Float)

@@ -18,6 +18,7 @@ from app.models.dashboard_pref import DashboardPref
 from app.models.check_template import CheckTemplate
 from app.models.branding import Branding
 from app.models.audit_log import AuditLog
+from app.models.tenant import Tenant
 
 __all__ = [
     "ApmSample",
@@ -25,6 +26,7 @@ __all__ = [
     "CheckTemplate",
     "Branding",
     "AuditLog",
+    "Tenant",
     "Ticket",
     "TicketTask",
     "TicketComment",

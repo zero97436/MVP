@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Bot,
   Settings,
+  Building2,
   ChevronLeft,
   type LucideIcon,
 } from "lucide-react";
@@ -50,6 +51,7 @@ const NAV: NavItem[] = [
   { to: "/events", label: "Événements", icon: History },
   { to: "/audit", label: "Audit", icon: ShieldCheck },
   { to: "/assistant", label: "Assistant", icon: Bot },
+  { to: "/tenants", label: "Tenants", icon: Building2 },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 

@@ -26,6 +26,7 @@ class UserOut(BaseModel):
     role: str
     is_admin: bool
     is_active: bool
+    tenant_id: int | None = None
     created_at: datetime
 
     class Config:

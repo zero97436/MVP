@@ -10,6 +10,7 @@ class HostBase(BaseModel):
     environment: str = "production"
     is_active: bool = True
     parent_host_id: int | None = None
+    tenant_id: int | None = None
     location: str | None = None
     latitude: float | None = None
     longitude: float | None = None
@@ -26,6 +27,7 @@ class HostUpdate(BaseModel):
     environment: str | None = None
     is_active: bool | None = None
     parent_host_id: int | None = None
+    tenant_id: int | None = None
     location: str | None = None
     latitude: float | None = None
     longitude: float | None = None

@@ -2,6 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, require_ingest_key
+from app.core.tenancy import host_visible, is_scoped
+from app.models.user import User
+from app.repositories.host_repo import HostRepository
 from app.db.session import get_db
 from app.repositories.metric_repo import MetricRepository
 from app.schemas.metric import MetricHourlyOut, MetricIngest, MetricLatest, MetricOut
@@ -44,7 +47,9 @@ def host_metrics(
     hours: int = 24,
     limit: int = 1000,
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
+    _assert_host_seen(db, user, host_id)
     return MetricRepository(db).for_host(host_id, hours=hours, limit=limit)
 
 
@@ -64,8 +69,9 @@ def snmp_interfaces(host: str, community: str = "public", version: str = "2c", t
     response_model=list[MetricHourlyOut],
     dependencies=[Depends(get_current_user)],
 )
-def host_metrics_hourly(host_id: int, days: int = 30, db: Session = Depends(get_db)):
+def host_metrics_hourly(host_id: int, days: int = 30, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Rollups horaires (downsampling) pour des tendances long terme."""
+    _assert_host_seen(db, user, host_id)
     return DownsampleService(db).for_host(host_id, days=days)
 
 
@@ -74,8 +80,15 @@ def host_metrics_hourly(host_id: int, days: int = 30, db: Session = Depends(get_
     response_model=MetricLatest,
     dependencies=[Depends(get_current_user)],
 )
-def host_latest(host_id: int, db: Session = Depends(get_db)):
+def host_latest(host_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    _assert_host_seen(db, user, host_id)
     m = MetricRepository(db).latest(host_id)
     if not m:
         return MetricLatest(host_id=host_id)
     return m
+
+
+def _assert_host_seen(db, user, host_id: int) -> None:
+    """404 si l'hôte n'est pas visible par l'utilisateur (multi-tenant)."""
+    if is_scoped(user) and not host_visible(user, HostRepository(db).get(host_id)):
+        raise HTTPException(404, "Host not found")

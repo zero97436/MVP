@@ -11,18 +11,31 @@ from app.models.host import Host
 
 
 class DashboardService:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, user=None):
         self.db = db
+        self.user = user  # pour le cloisonnement multi-tenant (None = pas de filtre)
+
+    def _allowed(self) -> set[int] | None:
+        if self.user is None:
+            return None
+        from app.core.tenancy import visible_host_ids
+
+        return visible_host_ids(self.db, self.user)
 
     def summary(self) -> dict:
-        hosts_total = self.db.scalar(select(func.count(Host.id))) or 0
-        checks_total = self.db.scalar(select(func.count(Check.id))) or 0
+        allowed = self._allowed()
+        host_q = select(func.count(Host.id))
+        check_q = select(func.count(Check.id))
+        rows_q = select(Check.last_status, func.count(Check.id)).group_by(Check.last_status)
+        if allowed is not None:
+            host_q = host_q.where(Host.id.in_(allowed))
+            check_q = check_q.where(Check.host_id.in_(allowed))
+            rows_q = rows_q.where(Check.host_id.in_(allowed))
 
+        hosts_total = self.db.scalar(host_q) or 0
+        checks_total = self.db.scalar(check_q) or 0
         counts = {s.value: 0 for s in CheckStatus}
-        rows = self.db.execute(
-            select(Check.last_status, func.count(Check.id)).group_by(Check.last_status)
-        ).all()
-        for status, count in rows:
+        for status, count in self.db.execute(rows_q).all():
             key = status or CheckStatus.UNKNOWN.value
             counts[key] = counts.get(key, 0) + count
 
@@ -33,6 +46,7 @@ class DashboardService:
         }
 
     def incidents(self) -> list[dict]:
+        allowed = self._allowed()
         stmt = (
             select(Alert, Check, Host)
             .join(Check, Alert.check_id == Check.id)
@@ -40,6 +54,8 @@ class DashboardService:
             .where(Alert.is_active.is_(True))
             .order_by(Alert.created_at.desc())
         )
+        if allowed is not None:
+            stmt = stmt.where(Host.id.in_(allowed))
         out = []
         for alert, check, host in self.db.execute(stmt).all():
             out.append(

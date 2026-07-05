@@ -40,7 +40,7 @@ _BUSINESS = _PRO | {
     "itsm_connectors",     # push Jira / ServiceNow / webhook
     "remediation",         # automatisation de remédiation (agent + plans IA)
     "distributed",         # supervision distribuée (checks exécutés par les sondes)
-    "multi_site",          # multi-sites / multi-clients (roadmap)
+    "multi_tenant",        # multi-tenant MSP (multi-clients cloisonnés)
     "api_extended",
 }
 _ENTERPRISE = _BUSINESS | {"ha", "sso", "audit", "support_247"}
@@ -70,7 +70,7 @@ FEATURE_LABEL = {
     "itsm_connectors": "connecteurs ITSM (Jira, ServiceNow)",
     "remediation": "automatisation de remédiation",
     "distributed": "supervision distribuée",
-    "multi_site": "multi-sites / multi-clients",
+    "multi_tenant": "multi-tenant MSP (multi-clients cloisonnés)",
     "api_extended": "API étendue",
     "ha": "haute disponibilité",
     "sso": "SSO / SAML",
