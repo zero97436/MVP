@@ -69,7 +69,7 @@ export function Sidebar({
         </span>
         {!collapsed && (
           <span className="truncate text-sm font-semibold tracking-tight text-ink">
-            supervision-house
+            Opsora
           </span>
         )}
       </div>

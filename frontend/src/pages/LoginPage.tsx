@@ -44,7 +44,7 @@ export default function LoginPage() {
             <Satellite className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-lg font-semibold text-ink">supervision-house</h1>
+            <h1 className="text-lg font-semibold text-ink">Opsora</h1>
             <p className="text-xs text-ink-faint">Plateforme de supervision</p>
           </div>
         </div>

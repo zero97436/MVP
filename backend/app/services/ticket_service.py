@@ -321,7 +321,7 @@ class TicketService:
     def _push_webhook(self, ticket: Ticket) -> tuple[str | None, str | None]:
         payload = {
             "title": ticket.title, "description": ticket.description,
-            "priority": ticket.priority, "source": "supervision-house",
+            "priority": ticket.priority, "source": "opsora",
             "alert_id": ticket.alert_id,
         }
         r = httpx.post(settings.ITSM_URL, json=payload, timeout=10)

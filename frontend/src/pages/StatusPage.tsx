@@ -139,7 +139,7 @@ export default function StatusPage() {
         )}
 
         <p className="pt-4 text-center text-xs text-ink-faint">
-          Actualisation automatique toutes les 30 s · propulsé par supervision-house
+          Actualisation automatique toutes les 30 s · propulsé par Opsora
         </p>
       </div>
     </div>

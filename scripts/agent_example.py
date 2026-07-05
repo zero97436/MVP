@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agent de collecte minimal pour supervision-house.
+"""Agent de collecte minimal pour Opsora.
 
 Pousse périodiquement CPU / RAM / disque / réseau de la machine locale vers
 l'endpoint d'ingestion. À installer sur chaque hôte à superviser.
@@ -241,9 +241,9 @@ def sample(interval: float) -> dict:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="supervision-house metric agent")
+    p = argparse.ArgumentParser(description="Opsora metric agent")
     p.add_argument("--url", required=True, help="URL de l'endpoint /api/metrics/ingest")
-    p.add_argument("--host-id", type=int, help="ID de l'hôte côté supervision-house")
+    p.add_argument("--host-id", type=int, help="ID de l'hôte côté Opsora")
     p.add_argument("--hostname", help="hostname_or_ip de l'hôte (alternative à --host-id)")
     p.add_argument("--key", default="", help="Clé X-Ingest-Key")
     p.add_argument("--interval", type=float, default=30.0, help="Période en secondes")

@@ -62,11 +62,11 @@ def test_channel(channel_id: int, db: Session = Depends(get_db)):
     if not notifier:
         raise HTTPException(400, f"No notifier for type '{channel.type}'")
     notif = Notification(
-        subject="[TEST] supervision-house",
+        subject="[TEST] Opsora",
         body="Notification de test — si vous lisez ceci, le canal fonctionne ✅",
         status="OK",
         check_name="test",
-        host_name="supervision-house",
+        host_name="Opsora",
     )
     ok = notifier.send(notif, decrypt_config(channel.config_json or {}))
     if not ok:

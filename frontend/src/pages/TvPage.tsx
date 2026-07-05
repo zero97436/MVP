@@ -52,7 +52,7 @@ export default function TvPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 text-ink-soft">
           <Satellite className="h-7 w-7 text-brand" />
-          <span className="text-xl font-bold tracking-tight">supervision-house</span>
+          <span className="text-xl font-bold tracking-tight">Opsora</span>
         </div>
         <span className="text-5xl font-bold tabular-nums tracking-tight">
           {now.toLocaleTimeString("fr-FR")}

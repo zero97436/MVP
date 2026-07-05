@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # --- App ---
-    APP_NAME: str = "supervision-house"
+    APP_NAME: str = "Opsora"
     DEBUG: bool = False
     API_PREFIX: str = "/api"
 

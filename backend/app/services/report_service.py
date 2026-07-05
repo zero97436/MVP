@@ -91,7 +91,7 @@ class ReportService:
             return f"{round(sec / 3600, 1)} h"
 
         el = [
-            Paragraph("supervision-house — Rapport de disponibilité", styles["Title"]),
+            Paragraph("Opsora — Rapport de disponibilité", styles["Title"]),
             Paragraph(
                 f"Période : {days} jours · généré le {datetime.now():%d/%m/%Y %H:%M}",
                 styles["Normal"],
@@ -127,5 +127,5 @@ class ReportService:
         el.append(table)
 
         buf = io.BytesIO()
-        SimpleDocTemplate(buf, pagesize=A4, title="Rapport supervision-house").build(el)
+        SimpleDocTemplate(buf, pagesize=A4, title="Rapport Opsora").build(el)
         return buf.getvalue()

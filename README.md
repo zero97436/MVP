@@ -1,4 +1,4 @@
-# supervision-house
+# Opsora
 
 <!-- Remplacer OWNER/REPO par le chemin GitHub réel une fois le dépôt poussé. -->
 [![CI](https://github.com/zero97436/MVP/actions/workflows/ci.yml/badge.svg)](https://github.com/zero97436/MVP/actions/workflows/ci.yml)
@@ -163,8 +163,8 @@ curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER && newgrp docker
 
 # 2. Récupérer le projet
-git clone https://github.com/zero97436/MVP.git supervision-house
-cd supervision-house
+git clone https://github.com/zero97436/MVP.git opsora
+cd opsora
 
 # 3. Configurer l'environnement
 cp .env.example .env
@@ -184,7 +184,7 @@ nano .env
 
 ```bash
 # 4. Générer le certificat TLS auto-signé (une fois)
-openssl req -x509 -nodes -newkey rsa:2048 -days 825   -keyout deploy/nginx/certs/server.key -out deploy/nginx/certs/server.crt   -subj "/CN=supervision-house"
+openssl req -x509 -nodes -newkey rsa:2048 -days 825   -keyout deploy/nginx/certs/server.key -out deploy/nginx/certs/server.crt   -subj "/CN=opsora"
 
 # 5. Démarrer (build + migrations automatiques)
 docker compose up -d --build
@@ -206,7 +206,7 @@ sudo systemctl enable docker
 
 # Sauvegarde quotidienne à 2h du matin (dump PostgreSQL dans ./backups) :
 crontab -e
-0 2 * * * cd /chemin/vers/supervision-house && ./scripts/backup.sh >> /var/log/supervision-backup.log 2>&1
+0 2 * * * cd /chemin/vers/Opsora && ./scripts/backup.sh >> /var/log/opsora-backup.log 2>&1
 
 # Certificat TLS réel (par défaut : auto-signé) — déposer vos fichiers :
 #   deploy/nginx/certs/server.crt  et  server.key
@@ -219,8 +219,8 @@ crontab -e
 2. Ouvrir PowerShell :
 
 ```powershell
-git clone https://github.com/zero97436/MVP.git supervision-house
-cd supervision-house
+git clone https://github.com/zero97436/MVP.git opsora
+cd opsora
 Copy-Item .env.example .env
 notepad .env          # mêmes variables que Linux
 docker compose up -d --build
@@ -244,7 +244,7 @@ les commandes Linux ci-dessus.
 ### Mise à jour
 
 ```bash
-cd supervision-house
+cd opsora
 git pull
 docker compose up -d --build     # migrations de base appliquées automatiquement
 docker compose restart nginx     # rafraîchit la façade
@@ -303,9 +303,9 @@ python scripts/agent_example.py \
 - **Linux** : unité systemd :
 
 ```ini
-# /etc/systemd/system/supervision-agent.service
+# /etc/systemd/system/opsora-agent.service
 [Unit]
-Description=Agent supervision-house
+Description=Agent Opsora
 After=network-online.target
 [Service]
 ExecStart=/usr/bin/python3 /opt/supervision/agent_example.py --server https://... --hostname %H --key XXX
@@ -459,7 +459,7 @@ Serveur Paris;192.168.1.10;production;Agence Paris;;;Serveur Linux;Routeur Paris
 Coller (ou charger) le contenu de `hosts.cfg` + `services.cfg` concaténés :
 
 - `define host` → hôte créé (alias, address) — la directive **`parents` devient une
-  dépendance** supervision-house ✨
+  dépendance** Opsora ✨
 - `define service` → check mappé automatiquement :
   `check_http`→`http`, `check_tcp!8443`→`tcp_port 8443`, `check_ssh`, `check_ping`,
   `check_smtp/ftp/dns/imap/pop/ldap/snmp`…
