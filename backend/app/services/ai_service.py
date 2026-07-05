@@ -139,7 +139,24 @@ class AIService:
 
     def chat(self, question: str, history: list[dict] | None = None) -> dict:
         snapshot = self._state_snapshot()
-        messages = [{"role": "system", "content": CHAT_PROMPT.format(snapshot=snapshot)}]
+        system = CHAT_PROMPT.format(snapshot=snapshot)
+
+        # RAG : injecte les passages pertinents de la base de connaissances.
+        sources: list[dict] = []
+        try:
+            from app.services.rag_service import RagService
+
+            context, sources = RagService(self.db).context_for(question)
+            if context:
+                system += (
+                    "\n\n# Base de connaissances (runbooks/procédures internes)\n"
+                    "Appuie-toi sur ces extraits s'ils sont pertinents et cite le titre "
+                    "du document utilisé.\n" + context
+                )
+        except Exception as exc:  # noqa: BLE001 — le RAG ne doit jamais casser le chat
+            logger.debug("RAG ignoré : %s", exc)
+
+        messages = [{"role": "system", "content": system}]
         for msg in (history or [])[-6:]:
             role = msg.get("role")
             content = msg.get("content")
@@ -148,7 +165,7 @@ class AIService:
         messages.append({"role": "user", "content": question})
         answer = self._chat_messages(messages)
         text, plan = self._extract_plan(answer)
-        return {"answer": text, "model": settings.OLLAMA_MODEL, "plan": plan}
+        return {"answer": text, "model": settings.OLLAMA_MODEL, "plan": plan, "sources": sources}
 
     # Types de checks que l'assistant peut proposer (liste blanche).
     _PLAN_CHECK_TYPES = {

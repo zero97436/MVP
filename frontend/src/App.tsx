@@ -30,6 +30,7 @@ const EventsPage = lazy(() => import("./pages/EventsPage"));
 const AuditPage = lazy(() => import("./pages/AuditPage"));
 const TenantsPage = lazy(() => import("./pages/TenantsPage"));
 const ChatPage = lazy(() => import("./pages/ChatPage"));
+const KnowledgePage = lazy(() => import("./pages/KnowledgePage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
 export default function App() {
@@ -72,6 +73,7 @@ export default function App() {
                   <Route path="/audit" element={<AuditPage />} />
                   <Route path="/tenants" element={<TenantsPage />} />
                   <Route path="/assistant" element={<ChatPage />} />
+                  <Route path="/knowledge" element={<KnowledgePage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>

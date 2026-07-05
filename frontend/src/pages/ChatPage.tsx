@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Loader2, Send, Bot, User as UserIcon, Wand2, Play, CheckCircle2, Trash2 } from "lucide-react";
-import { chatAI, applyPlan, type AiPlan, type ApplyResult } from "../api/endpoints";
+import { chatAI, applyPlan, type AiPlan, type ApplyResult, type RagSource } from "../api/endpoints";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Card } from "../components/ui/Card";
 import { cn } from "../lib/cn";
@@ -14,6 +14,7 @@ interface Msg {
   content: string;
   plan?: AiPlan | null;
   applied?: ApplyResult | null;
+  sources?: RagSource[];
 }
 
 const SUGGESTIONS = [
@@ -45,7 +46,7 @@ export default function ChatPage() {
     setLoading(true);
     try {
       const { data } = await chatAI(question, history);
-      setMessages((m) => [...m, { role: "assistant", content: data.answer, plan: data.plan }]);
+      setMessages((m) => [...m, { role: "assistant", content: data.answer, plan: data.plan, sources: data.sources }]);
     } catch (e: unknown) {
       const detail =
         (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
@@ -108,6 +109,18 @@ export default function ChatPage() {
                   m.role === "user" ? "bg-brand text-white" : "border border-border bg-bg-soft/60 text-ink-soft")}>
                   {m.content}
                 </div>
+
+                {/* Sources RAG citées par l'IA */}
+                {m.sources && m.sources.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[11px] text-ink-faint">📚 Sources :</span>
+                    {m.sources.map((src) => (
+                      <span key={src.id} className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] text-brand" title={`pertinence ${src.score}`}>
+                        {src.title}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {/* Plan d'opérations proposé par l'IA */}
                 {m.plan && (

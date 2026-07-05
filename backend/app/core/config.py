@@ -62,6 +62,9 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://host.docker.internal:11434"
     OLLAMA_MODEL: str = "llama3.1:8b"
     OLLAMA_TIMEOUT_SECONDS: int = 120
+    # RAG : modèle d'embeddings Ollama (ollama pull nomic-embed-text) + nb de passages injectés.
+    OLLAMA_EMBED_MODEL: str = "nomic-embed-text"
+    RAG_TOP_K: int = 4
 
     # --- SSO / OIDC (Enterprise) ---
     # Compatible Keycloak, Azure AD/Entra, Google Workspace, Okta, Authentik…

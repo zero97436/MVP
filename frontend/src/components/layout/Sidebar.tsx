@@ -18,6 +18,7 @@ import {
   History,
   ShieldCheck,
   Bot,
+  BookOpen,
   Settings,
   Building2,
   ChevronLeft,
@@ -51,6 +52,7 @@ const NAV: NavItem[] = [
   { to: "/events", label: "Événements", icon: History },
   { to: "/audit", label: "Audit", icon: ShieldCheck },
   { to: "/assistant", label: "Assistant", icon: Bot },
+  { to: "/knowledge", label: "Connaissances", icon: BookOpen },
   { to: "/tenants", label: "Tenants", icon: Building2 },
   { to: "/settings", label: "Settings", icon: Settings },
 ];

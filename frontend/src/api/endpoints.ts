@@ -323,8 +323,20 @@ export interface ApplyResult {
   total: number;
   results: { op: string; status: string; detail: string; host_id?: number }[];
 }
+export interface RagSource { id: number; title: string; score: number; }
 export const chatAI = (question: string, history: { role: string; content: string }[]) =>
-  api.post<{ answer: string; model: string; plan: AiPlan | null }>("/ai/chat", { question, history });
+  api.post<{ answer: string; model: string; plan: AiPlan | null; sources?: RagSource[] }>("/ai/chat", { question, history });
+
+// --- Base de connaissances (RAG) ---
+export interface KnowledgeDoc {
+  id: number; title: string; source: string | null; chars: number;
+  embedded: boolean; content: string; created_at: string | null;
+}
+export const listKnowledge = () => api.get<KnowledgeDoc[]>("/knowledge");
+export const addKnowledge = (title: string, content: string, source?: string) =>
+  api.post<KnowledgeDoc>("/knowledge", { title, content, source });
+export const deleteKnowledge = (id: number) => api.delete(`/knowledge/${id}`);
+export const reindexKnowledge = () => api.post<{ embedded: number }>("/knowledge/reindex");
 export const applyPlan = (plan: AiPlan) => api.post<ApplyResult>("/ai/apply-plan", plan);
 
 // --- Users (admin) ---
