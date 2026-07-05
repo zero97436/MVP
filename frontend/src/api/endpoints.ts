@@ -337,6 +337,9 @@ export const addKnowledge = (title: string, content: string, source?: string) =>
   api.post<KnowledgeDoc>("/knowledge", { title, content, source });
 export const deleteKnowledge = (id: number) => api.delete(`/knowledge/${id}`);
 export const reindexKnowledge = () => api.post<{ embedded: number }>("/knowledge/reindex");
+export const importKnowledge = (data: { documents?: { title: string; content: string; source?: string }[]; markdown?: string; source?: string }) =>
+  api.post<{ imported: number }>("/knowledge/import", data);
+export const importStarterPack = () => api.post<{ imported: number }>("/knowledge/starter-pack");
 export const applyPlan = (plan: AiPlan) => api.post<ApplyResult>("/ai/apply-plan", plan);
 
 // --- Users (admin) ---

@@ -40,6 +40,37 @@ def embed(text: str) -> list[float] | None:
         return None
 
 
+def split_markdown(text: str, source: str | None = None) -> list[dict]:
+    """Découpe un document en sections sur les titres Markdown (# / ##).
+
+    Chaque section (titre + contenu jusqu'au titre suivant) devient un document —
+    granularité idéale pour la récupération RAG. Sans titre, renvoie un seul doc.
+    """
+    lines = text.splitlines()
+    docs: list[dict] = []
+    title, buf = None, []
+
+    def flush():
+        if title and "".join(buf).strip():
+            docs.append({"title": title[:255], "content": "\n".join(buf).strip(), "source": source})
+
+    for line in lines:
+        m = re.match(r"^#{1,3}\s+(.+?)\s*#*\s*$", line)
+        if m:
+            flush()
+            title, buf = m.group(1).strip(), []
+        else:
+            buf.append(line)
+    flush()
+
+    if not docs:  # aucun titre -> document unique
+        body = text.strip()
+        if body:
+            first = body.splitlines()[0][:80]
+            docs.append({"title": (source or first)[:255], "content": body, "source": source})
+    return docs
+
+
 def _cosine(a: list[float], b: list[float]) -> float:
     if not a or not b or len(a) != len(b):
         return 0.0
@@ -77,6 +108,31 @@ class RagService:
         self.db.delete(doc)
         self.db.commit()
         return True
+
+    def import_many(self, documents: list[dict]) -> int:
+        """Ajoute plusieurs documents d'un coup (import de fichiers / collage)."""
+        n = 0
+        for d in documents:
+            title = (d.get("title") or "").strip()
+            content = (d.get("content") or "").strip()
+            if not title or not content:
+                continue
+            self.db.add(KnowledgeDocument(
+                title=title[:255], content=content, source=(d.get("source") or None),
+                embedding=embed(f"{title}\n{content}"),
+            ))
+            n += 1
+        if n:
+            self.db.commit()
+        return n
+
+    def import_starter_pack(self) -> int:
+        """Insère une base de problèmes IT courants (Windows, Office, réseau…)."""
+        from app.services.knowledge_seed import STARTER_PACK
+
+        existing = {d.title for d in self.list()}
+        fresh = [d for d in STARTER_PACK if d["title"] not in existing]
+        return self.import_many(fresh)
 
     def reindex(self) -> int:
         """Recalcule les embeddings de tous les documents (après pull du modèle)."""

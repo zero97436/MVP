@@ -30,6 +30,12 @@ class SearchIn(BaseModel):
     query: str
 
 
+class ImportIn(BaseModel):
+    documents: list[DocIn] | None = None   # import de fichiers / liste
+    markdown: str | None = None            # gros document découpé par titres
+    source: str | None = None
+
+
 @router.get("")
 def list_docs(db: Session = Depends(get_db)):
     return [_out(d) for d in RagService(db).list()]
@@ -46,6 +52,26 @@ def add_doc(payload: DocIn, db: Session = Depends(get_db)):
 def delete_doc(doc_id: int, db: Session = Depends(get_db)):
     if not RagService(db).delete(doc_id):
         raise HTTPException(404, "Document introuvable")
+
+
+@router.post("/import", dependencies=[Depends(require_operator)])
+def import_docs(payload: ImportIn, db: Session = Depends(get_db)):
+    """Import en lot : liste de documents et/ou gros Markdown découpé par titres."""
+    from app.services.rag_service import split_markdown
+
+    svc = RagService(db)
+    docs: list[dict] = [d.model_dump() for d in (payload.documents or [])]
+    if payload.markdown and payload.markdown.strip():
+        docs += split_markdown(payload.markdown, payload.source)
+    if not docs:
+        raise HTTPException(400, "Aucun document à importer (documents ou markdown requis)")
+    return {"imported": svc.import_many(docs)}
+
+
+@router.post("/starter-pack", dependencies=[Depends(require_operator)])
+def starter_pack(db: Session = Depends(get_db)):
+    """Insère une base de problèmes IT courants (Windows, Office, réseau, matériel)."""
+    return {"imported": RagService(db).import_starter_pack()}
 
 
 @router.post("/reindex", dependencies=[Depends(require_operator)])

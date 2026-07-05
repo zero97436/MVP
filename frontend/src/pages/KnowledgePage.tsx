@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { BookOpen, Plus, Trash2, RefreshCw, Sparkles } from "lucide-react";
-import { listKnowledge, addKnowledge, deleteKnowledge, reindexKnowledge, type KnowledgeDoc } from "../api/endpoints";
+import { BookOpen, Plus, Trash2, RefreshCw, Sparkles, Upload, FileUp, PackagePlus } from "lucide-react";
+import { listKnowledge, addKnowledge, deleteKnowledge, reindexKnowledge, importKnowledge, importStarterPack, type KnowledgeDoc } from "../api/endpoints";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Card, SectionTitle, MotionGrid } from "../components/ui/Card";
 import { Loading } from "../components/States";
@@ -30,6 +30,31 @@ export default function KnowledgePage() {
     } finally { setBusy(false); }
   };
   const remove = async (id: number) => { if (confirm("Supprimer ce document ?")) { await deleteKnowledge(id); load(); } };
+
+  const [bulk, setBulk] = useState("");
+  const importMarkdown = async () => {
+    if (!bulk.trim()) return;
+    setBusy(true);
+    try { const { data } = await importKnowledge({ markdown: bulk }); setMsg(`${data.imported} document(s) importé(s).`); setBulk(""); load(); }
+    finally { setBusy(false); }
+  };
+  const onFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setBusy(true);
+    try {
+      const documents = await Promise.all(
+        Array.from(files).map(async (f) => ({ title: f.name.replace(/\.[^.]+$/, ""), content: await f.text(), source: f.name })),
+      );
+      const { data } = await importKnowledge({ documents });
+      setMsg(`${data.imported} document(s) importé(s) depuis ${files.length} fichier(s).`);
+      load();
+    } finally { setBusy(false); }
+  };
+  const loadStarter = async () => {
+    setBusy(true);
+    try { const { data } = await importStarterPack(); setMsg(`${data.imported} problème(s) courant(s) ajouté(s) (Windows, Office, réseau…).`); load(); }
+    finally { setBusy(false); }
+  };
   const reindex = async () => {
     setBusy(true);
     try { const { data } = await reindexKnowledge(); setMsg(`${data.embedded} document(s) ré-indexé(s) sémantiquement.`); load(); }
@@ -63,6 +88,29 @@ export default function KnowledgePage() {
         </div>
       </div>
       {msg && <p className="text-xs text-status-ok">{msg}</p>}
+
+      {/* Import en masse */}
+      {editable && (
+        <Card>
+          <SectionTitle title="Importer en masse" icon={Upload} />
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="btn-ghost cursor-pointer">
+              <FileUp className="h-4 w-4" /> Importer des fichiers (.md, .txt)
+              <input type="file" accept=".md,.txt,.markdown" multiple className="hidden" onChange={(e) => onFiles(e.target.files)} />
+            </label>
+            <button onClick={loadStarter} disabled={busy} className="btn-ghost">
+              <PackagePlus className="h-4 w-4" /> Charger le pack de démarrage (Windows, Office, réseau…)
+            </button>
+          </div>
+          <p className="mt-3 mb-1 text-xs text-ink-faint">
+            …ou collez un gros document Markdown (il sera découpé en fiches sur chaque titre <code className="rounded bg-bg-soft px-1"># / ##</code>) :
+          </p>
+          <textarea value={bulk} onChange={(e) => setBulk(e.target.value)} rows={4}
+                    placeholder={"## Problème A\nSolution A…\n\n## Problème B\nSolution B…"}
+                    className="input w-full font-mono text-xs" />
+          <button onClick={importMarkdown} disabled={busy || !bulk.trim()} className="btn-primary mt-2">Importer le document</button>
+        </Card>
+      )}
 
       {editable && (
         <Card>

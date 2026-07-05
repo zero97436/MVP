@@ -1,5 +1,41 @@
 """RAG : ajout de documents, recherche (embeddings mockés + repli mots-clés)."""
-from app.services.rag_service import RagService, _cosine
+from app.services.rag_service import RagService, _cosine, split_markdown
+
+
+def test_split_markdown_by_headings():
+    md = "# Intro\nblabla\n## Problème A\nsolution A\n## Problème B\nsolution B"
+    docs = split_markdown(md, source="doc.md")
+    titles = [d["title"] for d in docs]
+    assert titles == ["Intro", "Problème A", "Problème B"]
+    assert docs[1]["content"] == "solution A" and docs[1]["source"] == "doc.md"
+
+
+def test_split_markdown_without_headings():
+    docs = split_markdown("juste du texte sans titre", source="note.txt")
+    assert len(docs) == 1 and docs[0]["source"] == "note.txt"
+
+
+def test_bulk_import_and_starter_pack(client, monkeypatch):
+    monkeypatch.setattr("app.services.rag_service.embed", lambda text: None)
+    r = client.post("/api/knowledge/import", json={
+        "markdown": "## Windows lent\nDésactiver le démarrage.\n## VPN\nRelancer le client.",
+        "source": "guide.md",
+    })
+    assert r.status_code == 200 and r.json()["imported"] == 2
+
+    # Pack de démarrage : insère les problèmes courants, idempotent.
+    n1 = client.post("/api/knowledge/starter-pack").json()["imported"]
+    assert n1 > 10
+    n2 = client.post("/api/knowledge/starter-pack").json()["imported"]
+    assert n2 == 0  # déjà présents
+
+    # L'import alimente bien la recherche.
+    hits = client.post("/api/knowledge/search", json={"query": "office plante au démarrage"}).json()
+    assert any("Office" in h["title"] for h in hits)
+
+
+def test_import_requires_content(client):
+    assert client.post("/api/knowledge/import", json={}).status_code == 400
 
 
 def test_cosine_similarity():
