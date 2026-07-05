@@ -112,7 +112,7 @@ export default function HostsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Hosts"
-        subtitle={license ? `${license.used}/${license.max_hosts} hôtes (plan ${license.plan === "free" ? "gratuit" : license.plan})` : `${views.length} hôtes supervisés`}
+        subtitle={license ? (license.max_hosts == null ? `${license.used} hôtes · édition ${license.plan === "community" ? "Community (illimité)" : license.plan}` : `${license.used}/${license.max_hosts} hôtes (plan ${license.plan})`) : `${views.length} hôtes supervisés`}
         actions={
           editable && (
             <div className="flex items-center gap-2">

@@ -19,7 +19,7 @@ commande avec Docker Compose.
 
 ## Table des matières
 
-1. [Éditions : gratuit vs payant](#-éditions--gratuit-vs-payant)
+1. [Éditions : Community vs Enterprise](#-éditions--community-vs-enterprise-open-core)
 2. [Fonctionnalités](#-fonctionnalités)
 3. [Architecture](#-architecture)
 4. [Installation](#-installation)
@@ -43,27 +43,32 @@ commande avec Docker Compose.
 
 ---
 
-## 💰 Éditions : gratuit vs payant
+## 💰 Éditions : Community vs Enterprise (open-core)
 
-Le logiciel est **identique dans les deux éditions** — toutes les fonctionnalités sont
-incluses partout. Seul le **nombre d'hôtes supervisés** change.
+La supervision complète est **gratuite et sans limite d'hôtes**. Les revenus viennent
+des fonctionnalités dont les grandes organisations ont besoin — même modèle que
+GitLab ou Grafana.
 
-| | **Gratuit** | **Payant (licence)** |
+| | **Community** (gratuite, défaut) | **Enterprise** (licence) |
 |---|---|---|
-| Hôtes supervisés | **100 maximum** | selon la licence (500, 1 000, illimité…) |
-| Types de checks (26) | ✅ tous | ✅ tous |
-| Alerting, escalades, notifications (8 canaux) | ✅ | ✅ |
+| **Hôtes supervisés** | ✅ **illimités** | ✅ illimités |
+| 26 types de checks, agent, découverte, templates | ✅ | ✅ |
+| Alerting complet (8 canaux, escalades, flapping, dépendances) | ✅ | ✅ |
 | Tickets ITSM (auto + Jira/ServiceNow) | ✅ | ✅ |
-| Dashboards, cartes, rapports PDF, APM | ✅ | ✅ |
-| Assistant IA, page de statut publique, mode TV | ✅ | ✅ |
+| Dashboards, cartes, rapports PDF, APM, mode TV, statut public | ✅ | ✅ |
+| Assistant IA, migration Nagios/CSV | ✅ | ✅ |
 | Utilisateurs / rôles | ✅ illimités | ✅ illimités |
-| Support | communauté | éditeur |
+| **SSO / SAML** (annuaire d'entreprise) | — | ✅ *(roadmap)* |
+| **Haute disponibilité** (HA) | — | ✅ *(roadmap)* |
+| **Multi-tenant MSP** (plusieurs clients isolés) | — | ✅ *(roadmap)* |
+| **Journal d'audit / conformité** | — | ✅ *(roadmap)* |
+| **Support éditeur avec SLA** | communauté | ✅ |
 
-- **Sans clé de licence**, le logiciel fonctionne en édition gratuite : à partir du
-  101ᵉ hôte, la création est refusée avec un message explicite. Rien n'est supprimé,
-  rien ne s'arrête — les 100 premiers hôtes continuent d'être supervisés normalement.
-- Le quota est visible en permanence : page **Hosts** → « 87/100 hôtes (plan gratuit) ».
-- Pour étendre la limite : voir [Licence](#-licence--activer-la-version-payante).
+- **Sans clé de licence**, vous avez l'édition Community : tout le moteur de
+  supervision, sans plafond, pour toujours.
+- Une clé Enterprise active les fonctionnalités correspondantes (`features` gravées
+  dans la clé, validées hors-ligne par signature Ed25519).
+- Pour activer : voir [Licence](#-licence--activer-la-version-payante).
 
 ---
 
@@ -472,7 +477,8 @@ Coller (ou charger) le contenu de `hosts.cfg` + `services.cfg` concaténés :
 
 ## 🔑 Licence : activer la version payante
 
-1. Achetez une licence auprès de l'éditeur (vous recevez une **clé signée**).
+1. Achetez une licence **Enterprise** auprès de l'éditeur (vous recevez une **clé
+   signée** portant les fonctionnalités souscrites : SSO, HA, multi-tenant, support…).
 2. Sur le serveur :
 
 ```ini
@@ -484,10 +490,11 @@ LICENSE_KEY=eyJwbGFuIjoicHJvIiwibWF4X2hvc3RzIjoxMDAwLC4uLg.a1b2c3...
 docker compose up -d backend worker scheduler && docker compose restart nginx
 ```
 
-3. Vérifier : page **Hosts** → « x/1000 hôtes (plan pro) ».
+3. Vérifier : page **Hosts** → « x hôtes · édition enterprise ».
 
-- La clé est **signée cryptographiquement** : toute clé modifiée, expirée ou invalide
-  est ignorée et le logiciel revient au plan gratuit (sans jamais s'arrêter).
+- La clé est **signée cryptographiquement** (Ed25519) : toute clé modifiée, expirée ou
+  invalide est ignorée et le logiciel revient à l'édition Community (sans jamais
+  s'arrêter — la supervision continue).
 - La clé peut porter une date d'expiration (licence annuelle) et un nom de client.
 - Aucune connexion à Internet n'est requise pour la validation (hors-ligne total).
 
@@ -620,5 +627,5 @@ dans `registry.py` + la valeur d'enum. Voir n'importe quel plugin existant comme
 ## Licence du code
 
 Distribué selon les termes du fichier [LICENSE](LICENSE).
-L'édition gratuite est limitée à 100 hôtes supervisés ; l'extension s'obtient par
-clé de licence auprès de l'éditeur.
+L'édition Community est gratuite et sans limite d'hôtes ; les fonctionnalités
+Enterprise s'activent par clé de licence auprès de l'éditeur.

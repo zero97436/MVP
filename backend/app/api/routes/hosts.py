@@ -12,14 +12,19 @@ router = APIRouter(prefix="/hosts", tags=["hosts"], dependencies=[Depends(get_cu
 
 
 def enforce_host_limit(db: Session, adding: int = 1) -> None:
-    """Bloque la création au-delà de la limite de la licence (403 explicite)."""
+    """Bloque la création au-delà du plafond d'hôtes SI la licence en fixe un.
+
+    Édition Community : aucun plafond (max_hosts = None). Un plafond n'existe
+    que si une clé de licence en définit un explicitement (accords OEM)."""
     lic = get_license()
+    if lic["max_hosts"] is None:
+        return
     current = db.query(Host).count()
     if current + adding > lic["max_hosts"]:
         raise HTTPException(
             403,
             f"Limite de la licence atteinte : {current}/{lic['max_hosts']} hôtes "
-            f"(plan {lic['plan']}). Passez à une licence supérieure pour en ajouter.",
+            f"(plan {lic['plan']}). Contactez l'éditeur pour étendre la licence.",
         )
 
 

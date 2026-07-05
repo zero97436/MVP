@@ -23,7 +23,8 @@ export const getMe = () => api.get<User>("/auth/me");
 // --- Hosts ---
 export interface LicenseInfo {
   plan: string;
-  max_hosts: number;
+  max_hosts: number | null;
+  features: string[];
   used: number;
   customer: string | null;
   expires: string | null;

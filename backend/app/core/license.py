@@ -1,17 +1,21 @@
-"""Licence : version gratuite limitée à 100 hôtes, déblocable par clé signée.
+"""Licence — modèle open-core.
+
+Édition **Community** (sans clé) : toutes les fonctionnalités de supervision,
+hôtes ILLIMITÉS. Édition **Enterprise** (clé signée) : débloque les
+fonctionnalités enterprise (SSO, HA, multi-tenant MSP, conformité…) et le support.
 
 Signature asymétrique Ed25519 :
   - la clé PUBLIQUE ci-dessous vérifie les licences (sans danger dans un dépôt public) ;
-  - la clé PRIVÉE reste chez l'éditeur (scripts/generate_license.py, jamais distribuée) —
-    elle seule permet de générer des clés valides.
+  - la clé PRIVÉE reste chez l'éditeur (scripts/generate_license.py, jamais distribuée).
 
 Format de clé : base64url(payload_json) + "." + signature_ed25519_hex
-payload : {"plan": "pro", "max_hosts": 1000, "customer": "...", "expires": "2027-01-01"}
+payload : {"plan": "enterprise", "customer": "...", "features": ["sso", "ha"],
+           "max_hosts": null, "expires": "2027-01-01"}
+  - features  : fonctionnalités enterprise débloquées (voir ENTERPRISE_FEATURES)
+  - max_hosts : optionnel (null/absent = illimité) — réservé aux accords OEM
+  - expires   : optionnel (absent = perpétuelle)
 
-Une clé invalide, falsifiée ou expirée est ignorée -> retour au plan free.
-
-⚠️ Logiciel auto-hébergé et open source : ceci est une barrière commerciale honnête,
-   pas du DRM incassable (l'utilisateur peut patcher le code). Même modèle que GitLab CE/EE.
+Une clé invalide, falsifiée ou expirée est ignorée -> retour à Community.
 """
 from __future__ import annotations
 
@@ -20,16 +24,23 @@ import json
 from datetime import date
 from functools import lru_cache
 
-from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from app.core.config import settings
 
-# Clé publique Ed25519 de l'éditeur (vérification uniquement — impossible de
-# générer une licence avec ; il faut la clé privée correspondante).
+# Clé publique Ed25519 de l'éditeur (vérification uniquement).
 PUBLIC_KEY_HEX = "3e3884b11f4bdded21a6b42885fd0e7944db37c2e5da7e501d75b9ec74894cfe"
 
-FREE_PLAN = {"plan": "free", "max_hosts": 100, "customer": None, "expires": None}
+# Fonctionnalités enterprise connues (les clés peuvent en activer un sous-ensemble).
+ENTERPRISE_FEATURES = {"sso", "ha", "multi_tenant", "audit", "support"}
+
+COMMUNITY_PLAN = {
+    "plan": "community",
+    "max_hosts": None,  # illimité
+    "features": [],
+    "customer": None,
+    "expires": None,
+}
 
 
 def _verify(key: str) -> dict | None:
@@ -42,10 +53,8 @@ def _verify(key: str) -> dict | None:
         expires = payload.get("expires")
         if expires and date.fromisoformat(expires) < date.today():
             return None  # licence expirée
-        if not isinstance(payload.get("max_hosts"), int) or payload["max_hosts"] < 1:
-            return None
         return payload
-    except (InvalidSignature, Exception):  # noqa: BLE001 — clé malformée = plan free
+    except Exception:  # noqa: BLE001 — clé malformée/falsifiée = Community
         return None
 
 
@@ -53,10 +62,15 @@ def _verify(key: str) -> dict | None:
 def _cached_license(key: str) -> dict:
     payload = _verify(key) if key else None
     if not payload:
-        return dict(FREE_PLAN)
+        return dict(COMMUNITY_PLAN)
+    max_hosts = payload.get("max_hosts")
+    if max_hosts is not None and (not isinstance(max_hosts, int) or max_hosts < 1):
+        max_hosts = None
+    features = [f for f in payload.get("features", []) if f in ENTERPRISE_FEATURES]
     return {
-        "plan": payload.get("plan", "pro"),
-        "max_hosts": payload["max_hosts"],
+        "plan": payload.get("plan", "enterprise"),
+        "max_hosts": max_hosts,
+        "features": features,
         "customer": payload.get("customer"),
         "expires": payload.get("expires"),
     }
@@ -66,5 +80,11 @@ def get_license() -> dict:
     return _cached_license(settings.LICENSE_KEY or "")
 
 
-def max_hosts() -> int:
+def has_feature(name: str) -> bool:
+    """À utiliser pour conditionner les futures fonctionnalités enterprise."""
+    return name in get_license()["features"]
+
+
+def max_hosts() -> int | None:
+    """None = illimité."""
     return get_license()["max_hosts"]

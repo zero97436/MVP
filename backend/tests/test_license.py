@@ -20,11 +20,19 @@ def _make_key(payload: dict) -> str:
     return base64.urlsafe_b64encode(raw).decode().rstrip("=") + "." + sig
 
 
-def test_default_free_plan(client):
+def test_default_community_plan(client):
+    """Sans clé : édition Community — hôtes ILLIMITÉS, pas de features enterprise."""
     lic = client.get("/api/hosts/license").json()
-    assert lic["plan"] == "free"
-    assert lic["max_hosts"] == 100
+    assert lic["plan"] == "community"
+    assert lic["max_hosts"] is None       # illimité
+    assert lic["features"] == []
     assert isinstance(lic["used"], int)
+
+
+def test_community_has_no_host_limit(client):
+    """La création d'hôtes n'est jamais bloquée en Community."""
+    r = client.post("/api/hosts", json={"name": "libre-1", "hostname_or_ip": "10.0.2.200"})
+    assert r.status_code == 201
 
 
 def test_host_limit_enforced(client, monkeypatch):
@@ -53,10 +61,23 @@ def test_valid_license_key_raises_limit(monkeypatch):
     from app.core.config import settings as cfg
 
     monkeypatch.setattr(lic_mod, "PUBLIC_KEY_HEX", _TEST_PUB_HEX)
-    key = _make_key({"plan": "pro", "max_hosts": 5000, "customer": "ACME"})
+    key = _make_key({"plan": "enterprise", "customer": "ACME",
+                     "features": ["sso", "ha", "support", "inconnue"]})
     monkeypatch.setattr(cfg, "LICENSE_KEY", key)
     lic = get_license()
-    assert lic["plan"] == "pro" and lic["max_hosts"] == 5000 and lic["customer"] == "ACME"
+    assert lic["plan"] == "enterprise" and lic["customer"] == "ACME"
+    assert lic["max_hosts"] is None                      # illimité par défaut
+    assert set(lic["features"]) == {"sso", "ha", "support"}  # features inconnues filtrées
+
+    # has_feature() pour conditionner le code enterprise.
+    from app.core.license import has_feature
+    assert has_feature("sso") is True
+    assert has_feature("multi_tenant") is False
+
+    # Plafond OEM optionnel.
+    oem = _make_key({"plan": "oem", "max_hosts": 500, "customer": "OEM Corp"})
+    monkeypatch.setattr(cfg, "LICENSE_KEY", oem)
+    assert get_license()["max_hosts"] == 500
 
 
 def test_tampered_or_expired_key_falls_back_to_free(monkeypatch):
@@ -71,20 +92,20 @@ def test_tampered_or_expired_key_falls_back_to_free(monkeypatch):
     ).decode().rstrip("=")
     forged = forged_payload + "." + good.split(".")[1]
     monkeypatch.setattr(cfg, "LICENSE_KEY", forged)
-    assert get_license()["plan"] == "free"
+    assert get_license()["plan"] == "community"
 
     # Licence expirée.
-    expired = _make_key({"plan": "pro", "max_hosts": 500, "expires": "2020-01-01"})
+    expired = _make_key({"plan": "enterprise", "features": ["sso"], "expires": "2020-01-01"})
     monkeypatch.setattr(cfg, "LICENSE_KEY", expired)
-    assert get_license()["max_hosts"] == 100
+    assert get_license()["features"] == []  # retour Community
 
     # Clé illisible.
     monkeypatch.setattr(cfg, "LICENSE_KEY", "n-importe-quoi")
-    assert get_license()["plan"] == "free"
+    assert get_license()["plan"] == "community"
 
     # Clé signée par une AUTRE clé privée (attaquant avec sa propre paire).
     attacker = Ed25519PrivateKey.generate()
     raw = json.dumps({"plan": "pro", "max_hosts": 999999}, separators=(",", ":")).encode()
     rogue = base64.urlsafe_b64encode(raw).decode().rstrip("=") + "." + attacker.sign(raw).hex()
     monkeypatch.setattr(cfg, "LICENSE_KEY", rogue)
-    assert get_license()["plan"] == "free"
+    assert get_license()["plan"] == "community"
