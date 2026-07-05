@@ -21,13 +21,46 @@ logger = get_logger("scheduler")
 
 
 def run_scheduler() -> None:
+    import signal
+
+    from app.core.ha import LeaderElector
+
     logger.info("Scheduler started (tick=%ss)", settings.SCHEDULER_INTERVAL_SECONDS)
+    elector = LeaderElector()
     last_run: dict[int, float] = {}
     last_purge = 0.0
+    was_leader = False
     purge_interval = settings.RETENTION_PURGE_INTERVAL_MINUTES * 60
 
+    # Arrêt propre : libère le verrou leader -> bascule immédiate d'un stand-by.
+    class _Stop(Exception):
+        pass
+
+    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(_Stop()))
+
+    try:
+        _scheduler_loop(elector, last_run, purge_interval, was_leader, last_purge)
+    except (KeyboardInterrupt, _Stop):
+        logger.info("Scheduler : arrêt demandé, libération du leadership…")
+    finally:
+        elector.release()
+
+
+def _scheduler_loop(elector, last_run, purge_interval, was_leader, last_purge) -> None:
     while True:
         now = time.time()
+
+        # HA : seul le leader planifie. Les instances en attente veillent en silence.
+        if not elector.try_acquire_or_renew():
+            if was_leader:
+                logger.warning("HA : leadership perdu -> passage en attente")
+                was_leader = False
+            time.sleep(settings.SCHEDULER_INTERVAL_SECONDS)
+            continue
+        if not was_leader:
+            logger.info("HA : cette instance planifie (leader)")
+            was_leader = True
+
         db = SessionLocal()
         try:
             checks = CheckRepository(db).list_active()

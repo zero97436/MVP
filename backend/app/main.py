@@ -21,6 +21,7 @@ from app.api.routes import (
     discovery,
     docker,
     events,
+    ha,
     hosts,
     maintenance,
     metrics,
@@ -57,7 +58,7 @@ app.add_middleware(
 )
 
 # Enregistrement des routers sous /api.
-for module in (auth, hosts, checks, dashboard, metrics, users, admin, ai, agent, maintenance, events, discovery, reports, bam, tickets, apm, docker, check_templates, public_status, search, migrate, branding, sso, audit, tenants, settings_routes):
+for module in (auth, hosts, checks, dashboard, metrics, users, admin, ai, agent, maintenance, events, discovery, reports, bam, tickets, apm, docker, check_templates, public_status, search, migrate, branding, sso, audit, tenants, ha, settings_routes):
     app.include_router(module.router, prefix=settings.API_PREFIX)
 
 

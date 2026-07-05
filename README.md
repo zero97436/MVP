@@ -64,12 +64,12 @@ utilisateur · rétention étendue · personnalisation de marque · support par 
 ### 🏢 Business — *ajoute :*
 ✅ Connecteurs **ITSM** (Jira, ServiceNow, webhook sortant) · **automatisation de
 remédiation** (actions agent + plans IA) · **supervision distribuée** (checks
-exécutés par les sondes/agents) · multi-sites/multi-clients *(roadmap)* · API étendue.
+exécutés par les sondes/agents) · **multi-tenant MSP** (clients cloisonnés) · API étendue.
 
 ### 🏛️ Enterprise — *ajoute :*
-✅ **Haute disponibilité** *(roadmap)* · **SSO / SAML** *(roadmap)* · journal
-d'**audit / conformité** *(roadmap)* · support **24/7**, formation, développement
-spécifique, accompagnement.
+✅ **Haute disponibilité** (scheduler multi-instance, élection de leader) · **SSO /
+SAML / OIDC** (Keycloak, Azure AD, Google…) · journal d'**audit / conformité** ·
+support **24/7**, formation, développement spécifique, accompagnement.
 
 **Fonctionnement :**
 - Sans clé : édition Community, pour toujours. Au-delà d'une limite de plan, l'action
@@ -554,6 +554,29 @@ laquelle les secrets chiffrés en base sont indéchiffrables) et `deploy/nginx/c
 
 Rétention automatique des données (réglable dans `.env`) : résultats de checks 30 j,
 métriques brutes 15 j (agrégats horaires 1 an), alertes résolues 90 j, événements 90 j.
+
+---
+
+## 🔁 Haute disponibilité (HA — Enterprise)
+
+Le backend et les workers sont **stateless** : scalez-les librement derrière nginx.
+Le seul composant à singleton est le **scheduler** — Opsora intègre une **élection
+de leader** (verrou Redis à TTL renouvelé) : lancez plusieurs schedulers, un seul
+planifie, les autres veillent et prennent le relais **automatiquement** si le leader
+tombe (aucune exécution de check dupliquée, bascule sans intervention).
+
+```bash
+# Plusieurs instances de chaque tier (Postgres/Redis en HA géré séparément) :
+docker compose up -d --scale backend=3 --scale worker=3 --scale scheduler=2
+```
+
+- Bascule immédiate à l'arrêt propre (SIGTERM libère le verrou), sinon en ~90 s
+  (expiration du bail) en cas de crash brutal.
+- État du cluster : `GET /api/ha/status` (admin, Enterprise) — leader courant,
+  fraîcheur du heartbeat.
+- Sans Redis (mono-instance), le scheduler reste leader local : rien ne casse.
+- Pour une HA complète, prévoir Postgres et Redis en haute disponibilité (réplication /
+  service géré) — hors périmètre de l'image Opsora.
 
 ---
 
