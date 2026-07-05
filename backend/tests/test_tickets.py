@@ -209,6 +209,8 @@ def test_ticket_dedupe_same_check(client, db):
     t2 = svc.create_from_alert(a2, created_by="auto")
     assert t1.id == t2.id  # pas de doublon
     assert t2.alert_id == a2.id  # rattaché à l'alerte la plus récente
+    # L'occurrence supplémentaire est tracée dans les suivis.
+    assert any("Nouvelle occurrence" in c.body for c in t2.comments)
 
     # Ticket clôturé -> un nouvel incident recrée bien un ticket.
     svc.update_status(t1.id, "closed")
@@ -239,6 +241,10 @@ def test_ticket_auto_create_on_incident(client, db, monkeypatch):
     AlertService(db).handle_status_change(check, "OK", "CRITICAL", "up")     # résout
     db.refresh(tickets[0])
     assert tickets[0].status == "resolved"  # auto-résolu au retour OK
+    # La RAISON de la résolution est journalisée dans les suivis.
+    bodies = [c.body for c in tickets[0].comments]
+    assert any("Résolu automatiquement" in b and "repassé à l'état OK" in b for b in bodies)
+    assert any("supervision (auto)" == c.author for c in tickets[0].comments)
 
     AlertService(db).handle_status_change(check, "CRITICAL", "OK", "down")  # nouveau ticket
     AlertService(db).handle_status_change(check, "WARNING", "CRITICAL", "meh")

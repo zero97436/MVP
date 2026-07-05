@@ -109,9 +109,17 @@ class TicketService:
         if dedupe:
             existing = self.find_open_for_check(alert.check_id)
             if existing:
-                # Rattache le ticket à l'alerte la plus récente (flapping).
+                # Rattache le ticket à l'alerte la plus récente + trace l'occurrence.
                 if existing.alert_id != alert.id:
                     existing.alert_id = alert.id
+                    self.db.add(TicketComment(
+                        ticket_id=existing.id, author="supervision (auto)",
+                        body=(
+                            f"⚠️ Nouvelle occurrence de l'incident ({alert.status})"
+                            f"{f' : {alert.message}' if alert.message else ''} — "
+                            "rattachée à ce ticket (pas de doublon créé)."
+                        ),
+                    ))
                     self.db.commit()
                     self.db.refresh(existing)
                 return existing
@@ -144,7 +152,12 @@ class TicketService:
 
     def resolve_for_check(self, check_id: int) -> int:
         """Passe en 'resolved' les tickets AUTO encore ouverts de ce check
-        (appelé quand l'incident se résout). Les tickets manuels sont laissés."""
+        (appelé quand l'incident se résout). Les tickets manuels sont laissés.
+
+        La raison est journalisée dans les suivis : on doit toujours pouvoir
+        comprendre POURQUOI un ticket a été résolu automatiquement."""
+        from datetime import datetime
+
         tickets = list(self.db.scalars(
             select(Ticket)
             .join(Alert, Alert.id == Ticket.alert_id)
@@ -152,10 +165,24 @@ class TicketService:
                    Ticket.status.in_(("open", "in_progress")),
                    Ticket.created_by == "auto")
         ))
+        if not tickets:
+            return 0
+        check = self.db.get(Check, check_id)
+        check_name = check.name if check else f"check #{check_id}"
+        when = datetime.now().strftime("%d/%m/%Y à %H:%M")
         for t in tickets:
             t.status = "resolved"
-        if tickets:
-            self.db.commit()
+            self.db.add(TicketComment(
+                ticket_id=t.id, author="supervision (auto)",
+                body=(
+                    f"✅ Résolu automatiquement le {when} : le contrôle "
+                    f"« {check_name} » est repassé à l'état OK — l'incident à "
+                    "l'origine de ce ticket est terminé.\n"
+                    "Si le problème se reproduit, un nouveau ticket sera ouvert "
+                    "automatiquement."
+                ),
+            ))
+        self.db.commit()
         return len(tickets)
 
     def update_status(self, ticket_id: int, status: str) -> Ticket | None:
