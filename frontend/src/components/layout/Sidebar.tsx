@@ -16,6 +16,7 @@ import {
   Rocket,
   Container,
   History,
+  ShieldCheck,
   Bot,
   Settings,
   ChevronLeft,
@@ -47,6 +48,7 @@ const NAV: NavItem[] = [
   { to: "/bam", label: "Métier", icon: Briefcase },
   { to: "/reports", label: "Reports", icon: FileBarChart },
   { to: "/events", label: "Événements", icon: History },
+  { to: "/audit", label: "Audit", icon: ShieldCheck },
   { to: "/assistant", label: "Assistant", icon: Bot },
   { to: "/settings", label: "Settings", icon: Settings },
 ];

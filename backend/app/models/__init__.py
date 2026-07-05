@@ -17,12 +17,14 @@ from app.models.apm_sample import ApmSample
 from app.models.dashboard_pref import DashboardPref
 from app.models.check_template import CheckTemplate
 from app.models.branding import Branding
+from app.models.audit_log import AuditLog
 
 __all__ = [
     "ApmSample",
     "DashboardPref",
     "CheckTemplate",
     "Branding",
+    "AuditLog",
     "Ticket",
     "TicketTask",
     "TicketComment",

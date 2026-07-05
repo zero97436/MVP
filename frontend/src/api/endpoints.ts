@@ -378,6 +378,20 @@ export const saveBranding = (data: { display_name?: string; tagline?: string; lo
   api.put<BrandingSettings>("/branding", data);
 export const resetBranding = () => api.delete("/branding");
 
+// --- Audit (Enterprise) ---
+export interface AuditEntry {
+  id: number;
+  user_email: string | null;
+  method: string;
+  path: string;
+  action: string;
+  status_code: number;
+  ip: string | null;
+  created_at: string | null;
+}
+export const listAudit = (params?: { user?: string; action?: string; q?: string; limit?: number; offset?: number }) =>
+  api.get<AuditEntry[]>("/audit", { params });
+
 // --- Settings ---
 export const listChannels = () =>
   api.get<NotificationChannel[]>("/settings/notification-channels");
