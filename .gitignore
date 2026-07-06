@@ -34,3 +34,9 @@ backups/
 .DS_Store
 .idea/
 .vscode/
+
+# Service de vente (licensing) — secrets & données runtime, JAMAIS committes
+licensing/vendor_private.key
+licensing/orders.db
+licensing/.venv/
+licensing/*.db
