@@ -69,7 +69,7 @@ export default function TicketsPage() {
   const toggleTask = async (taskId: number, done: boolean) => { await updateTicketTask(taskId, { done }); load(); };
   const removeTask = async (taskId: number) => { await deleteTicketTask(taskId); load(); };
 
-  // Édition GLPI-like : un ticket à la fois, brouillon local.
+  // Édition inline : un ticket à la fois, brouillon local.
   const [editing, setEditing] = useState<number | null>(null);
   const [draft, setDraft] = useState({ title: "", description: "", priority: "medium" });
   const startEdit = (t: Ticket) => {
@@ -177,7 +177,7 @@ export default function TicketsPage() {
             <motion.div key={t.id} variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}>
               <div className="card border-l-4 p-4" style={{ borderColor: PRIO_COLOR[t.priority] }}>
                 {editing === t.id ? (
-                  /* --- Mode édition (GLPI-like) --- */
+                  /* --- Mode édition inline --- */
                   <div className="space-y-2">
                     <input
                       value={draft.title}
@@ -300,7 +300,7 @@ export default function TicketsPage() {
                   )}
                 </div>
 
-                {/* Suivis (fil GLPI-like) */}
+                {/* Suivis (fil de commentaires) */}
                 <div className="mt-3 rounded-lg border border-border bg-bg-soft/40 p-2.5">
                   <button
                     onClick={() => setShowComments((p) => ({ ...p, [t.id]: !p[t.id] }))}

@@ -7,7 +7,7 @@
 ![Docker](https://img.shields.io/badge/docker-compose-2496ed)
 
 **Plateforme de supervision d'infrastructure complète et auto-hébergée** — l'alternative
-moderne à Centreon/Nagios : hôtes, checks, alerting intelligent, tickets intégrés,
+moderne aux outils de supervision traditionnels : hôtes, checks, alerting intelligent, tickets intégrés,
 cartographie, APM, conteneurs, rapports SLA et assistant IA, le tout déployé en une
 commande avec Docker Compose.
 
@@ -52,7 +52,7 @@ la maturité de l'organisation. Chaque plan **inclut tout ce qui précède**.
 ✅ **Jusqu'à 500 hôtes** · les 26 types de checks · dashboard complet · cartographie
 (topologie + carte géographique) · historique · graphes de disponibilité · alertes
 **e-mail + webhook** · maintenance, dépendances, flapping, escalades · agent
-Windows/Linux · découverte réseau · templates · migration Nagios/CSV · tickets
+Windows/Linux · découverte réseau · templates · migration (.cfg / CSV) · tickets
 internes · API REST · **assistant IA local** (analyse d'incident + chat — l'élément
 différenciant reste gratuit) · mode TV · page de statut publique.
 
@@ -106,7 +106,7 @@ support **24/7**, formation, développement spécifique, accompagnement.
   **détection de flapping** (état instable = alertes suspendues, événement tracé).
 
 ### Exploitation
-- **Tickets intégrés** façon GLPI : création **automatique sur incident** (sans
+- **Tickets intégrés** (module ITSM complet) : création **automatique sur incident** (sans
   doublon, auto-résolus au retour OK), tâches (checklist), suivis horodatés,
   assignation avec notification e-mail, priorités, push **Jira / ServiceNow / webhook**.
 - **Rapports** : SLA par hôte, MTTR, disponibilité 24 h/7 j/30 j, **export PDF**.
@@ -121,7 +121,7 @@ support **24/7**, formation, développement spécifique, accompagnement.
 ### Administration
 - Utilisateurs et **rôles** (admin / opérateur / lecteur), HTTPS, secrets chiffrés
   en base, anti-bruteforce, rétention/purge automatique des données, sauvegardes,
-  migration depuis Nagios/CSV, 180+ tests automatisés.
+  migration (config .cfg / CSV), 180+ tests automatisés.
 
 ---
 
@@ -378,7 +378,7 @@ suppressions et leur raison, notifications envoyées).
 
 ## 🎫 Tickets (ITSM intégré)
 
-Un vrai module de ticketing, inspiré de GLPI :
+Un vrai module de ticketing (centre de services) :
 
 - **Création automatique** sur incident (CRITICAL/WARNING) — activée par
   `ITSM_AUTO_CREATE=true` :
@@ -422,7 +422,7 @@ ITSM_AUTO_CREATE=true
 | **Conteneurs** | `/containers` | Docker : état + CPU/RAM par conteneur |
 | **Topology** | `/topology` | carte logique réseau (React Flow) avec dépendances |
 | **Carte** | `/geo` | carte géographique mondiale — placement des hôtes **au clic** |
-| **Opérations** | `/operations` | carte métier type Centreon MAP — tuiles **drag & drop** |
+| **Opérations** | `/operations` | carte métier (business activity) — tuiles **drag & drop** |
 | **Métier** | `/bam` | définition des services métier (BAM) |
 | **Reports** | `/reports` | SLA, MTTR, disponibilité + **export PDF** |
 | **Mode TV** | `/tv` | plein écran pour écran mural NOC (bouton « TV » en haut) |
@@ -437,7 +437,7 @@ Page **Hosts → bouton « Importer »**. Deux formats, avec **prévisualisation
 obligatoire** (rien n'est créé avant confirmation) et **imports idempotents**
 (ré-importer ne crée jamais de doublon — dédoublonnage par IP).
 
-### 1. CSV universel (depuis n'importe quel outil : Centreon, Zabbix, PRTG, Excel…)
+### 1. CSV universel (depuis n'importe quel outil, via export CSV / Excel)
 
 Exporter les hôtes de l'ancien outil en CSV avec ces colonnes (ordre libre,
 séparateur `,` ou `;`, seules `name` et `ip` sont obligatoires) :
@@ -454,7 +454,7 @@ Serveur Paris;192.168.1.10;production;Agence Paris;;;Serveur Linux;Routeur Paris
 | `parent` | crée la **dépendance** parent/enfant (nom d'un hôte du fichier ou déjà existant) |
 | `site`, `latitude`, `longitude` | l'hôte apparaît directement sur la **carte géographique** |
 
-### 2. Nagios / Icinga (fichiers `.cfg`)
+### 2. Fichiers de configuration (`.cfg`)
 
 Coller (ou charger) le contenu de `hosts.cfg` + `services.cfg` concaténés :
 
@@ -467,20 +467,17 @@ Coller (ou charger) le contenu de `hosts.cfg` + `services.cfg` concaténés :
 - Les commandes **non mappables** (plugins maison `check_custom_xyz`) sont listées en
   avertissements clairs — à recréer via `ssh_command` ou un type natif
 
-### Conseils par outil source
+### Conseils selon votre outil actuel
 
-| Depuis | Chemin recommandé |
+| Vous disposez de… | Chemin recommandé |
 |---|---|
-| **Nagios / Icinga** | export direct des `.cfg` → import Nagios |
-| **Centreon** | `centreon -e` (export CLAPI) → convertir en CSV (hôtes) — ou re-découverte réseau |
-| **Zabbix** | export CSV de l'inventaire des hôtes → import CSV |
-| **PRTG** | export CSV des devices → import CSV |
+| **Fichiers de config `.cfg`** | import direct (format `.cfg`) |
+| **Un export CSV / Excel** de l'inventaire | import CSV universel |
+| **Une API / CLI d'export** | convertir l'export en CSV (nom, IP, site…) puis import CSV |
 | **Aucun export possible** | utiliser la **Découverte réseau** intégrée : scan de la plage IP, import en un clic |
 
 > 💡 L'historique de l'ancien outil n'est pas migré (les métriques repartent de zéro) —
 > c'est la configuration qui compte, et elle se transfère en quelques minutes.
-> La limite de licence s'applique à l'import : en édition gratuite, un import qui
-> dépasserait 100 hôtes est refusé en bloc avant toute création.
 
 ---
 

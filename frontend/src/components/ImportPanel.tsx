@@ -68,7 +68,7 @@ export function ImportPanel({ onImported }: { onImported: () => void }) {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <select value={format} onChange={(e) => setFormat(e.target.value as "csv" | "nagios")} className="input">
           <option value="csv">CSV (universel)</option>
-          <option value="nagios">Nagios / Icinga (.cfg)</option>
+          <option value="nagios">Fichiers de configuration (.cfg)</option>
         </select>
         <label className="btn-ghost cursor-pointer justify-center">
           <FileUp className="h-4 w-4" /> Choisir un fichier…
@@ -84,7 +84,7 @@ export function ImportPanel({ onImported }: { onImported: () => void }) {
         rows={7}
         placeholder={format === "csv"
           ? "Colle ton CSV ici (colonnes : name, ip, environment, site, latitude, longitude, template, parent)"
-          : "Colle le contenu de tes fichiers Nagios (hosts.cfg + services.cfg concaténés)"}
+          : "Colle le contenu de tes fichiers de configuration .cfg (hosts + services concaténés)"}
         className="input mt-3 w-full font-mono text-xs"
       />
       <div className="mt-3 flex items-center gap-2">
