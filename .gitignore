@@ -43,3 +43,6 @@ licensing/*.db
 
 # Site vitrine (heberge separement, hors depot produit)
 website/
+
+# Service de vente (heberge separement, hors depot produit)
+licensing/
