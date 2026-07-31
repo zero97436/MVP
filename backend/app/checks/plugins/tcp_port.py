@@ -14,7 +14,8 @@ class TcpPortCheck(BaseCheck):
         if not port:
             return CheckResultData(
                 status=CheckStatus.UNKNOWN,
-                message="config_json.port is required",
+                message="Port manquant : renseignez le port dans la configuration "
+                        '(config_json : {"port": 443}).',
             )
 
         start = time.perf_counter()
@@ -30,8 +31,18 @@ class TcpPortCheck(BaseCheck):
                     perfdata={"connect_ms": round(elapsed_ms, 1), "port": int(port)},
                 )
         except (OSError, ValueError) as exc:
+            reason = str(exc)
+            low = reason.lower()
+            if "timed out" in low or "timeout" in low:
+                hint = f"aucune réponse (pare-feu bloquant, ou {ctx.hostname_or_ip} injoignable ?)"
+            elif "refused" in low:
+                hint = "connexion refusée (le service n'écoute pas sur ce port)"
+            elif "name or service" in low or "resolve" in low or "getaddrinfo" in low:
+                hint = f"nom « {ctx.hostname_or_ip} » non résolu (DNS/hostname incorrect ?)"
+            else:
+                hint = reason
             return CheckResultData(
                 status=CheckStatus.CRITICAL,
-                message=f"Port {port} closed/unreachable: {exc}",
-                perfdata={"port": port},
+                message=f"Port {port} sur {ctx.hostname_or_ip} injoignable : {hint}",
+                perfdata={"port": int(port) if str(port).isdigit() else port},
             )

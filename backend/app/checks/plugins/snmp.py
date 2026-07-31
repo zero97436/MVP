@@ -46,19 +46,24 @@ class SnmpCheck(BaseCheck):
             "-Oqv", "-t", str(max(1, ctx.timeout_seconds)), "-r", "1",
             ctx.hostname_or_ip, oid,
         ]
+        hint = (f"Vérifier : SNMP activé sur {ctx.hostname_or_ip} · communauté « {community} » "
+                f"en lecture · version {version} · port UDP 161 ouvert (pare-feu).")
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=ctx.timeout_seconds * 2 + 5)
         except FileNotFoundError:
-            return CheckResultData(status=CheckStatus.UNKNOWN, message="snmpget non installé")
+            return CheckResultData(status=CheckStatus.UNKNOWN, message="snmpget non installé sur le serveur")
         except subprocess.TimeoutExpired:
-            return CheckResultData(status=CheckStatus.CRITICAL, message="SNMP : pas de réponse (timeout)")
+            return CheckResultData(status=CheckStatus.CRITICAL, message=f"SNMP : pas de réponse (timeout). {hint}")
 
         if proc.returncode != 0:
             err = (proc.stderr or proc.stdout or "").strip().splitlines()
-            return CheckResultData(
-                status=CheckStatus.CRITICAL,
-                message=f"SNMP erreur : {err[-1] if err else 'échec'}",
-            )
+            detail = err[-1] if err else "échec"
+            low = detail.lower()
+            if "timeout" in low or "no response" in low:
+                detail = f"pas de réponse. {hint}"
+            elif "unknown" in low and "oid" in low:
+                detail = f"OID « {oid} » non supporté par cet équipement (essayez metric=sysdescr)."
+            return CheckResultData(status=CheckStatus.CRITICAL, message=f"SNMP : {detail}")
 
         raw = proc.stdout.strip().strip('"')
         # Tente d'extraire une valeur numérique (CPU%, compteur…).
