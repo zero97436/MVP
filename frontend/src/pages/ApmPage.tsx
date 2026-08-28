@@ -62,6 +62,7 @@ export default function ApmPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        helpTopic="apm"
         title="APM"
         subtitle="Supervision applicative — débit, erreurs et latence des applications"
         actions={
