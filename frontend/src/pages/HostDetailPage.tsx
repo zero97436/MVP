@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Cpu, MemoryStick, HardDrive, Network, Server } from "lucide-react";
-import { getHost, getHostMetrics, getHostMetricsHourly, listChecks, listResults } from "../api/endpoints";
+import { ArrowLeft, Cpu, MemoryStick, HardDrive, Network, Server, Radio, Terminal, Copy, Check as CheckIcon } from "lucide-react";
+import { getHost, getHostMetrics, getHostMetricsHourly, listChecks, listResults, getHostEnrollment, type HostEnrollment } from "../api/endpoints";
 import type { Check, CheckResult, Host, HostMetric, HostMetricHourly } from "../types";
+import { useAuth } from "../lib/auth";
+import { isAdmin } from "../lib/permissions";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Card, SectionTitle, MotionGrid } from "../components/ui/Card";
 import { StatusBadge } from "../components/ui/StatusBadge";
@@ -112,6 +114,9 @@ export default function HostDetailPage() {
           <Summary icon={Server} label="Température" value={`${metrics[metrics.length - 1].temperature} °C`} />
         )}
       </Card>
+
+      {/* Comment cet hôte est supervisé (mode push/pull) */}
+      <SupervisionCard host={host} />
 
       {/* Widgets ressources — uniquement si l'hôte remonte de vraies métriques (agent) */}
       {hasMetrics ? (
@@ -238,6 +243,89 @@ function DiskBar({ name, pct }: { name: string; pct: number }) {
         <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, pct)}%`, background: meta.color }} />
       </div>
     </div>
+  );
+}
+
+const MODE_INFO: Record<string, { label: string; desc: string }> = {
+  agentless: { label: "Agentless", desc: "Le serveur sonde directement l'hôte sur le réseau (ICMP, SNMP, HTTP, TCP…)." },
+  agent: { label: "Agent (push HTTPS)", desc: "Un agent installé sur l'hôte pousse ses métriques et résultats vers Opsora en HTTPS." },
+  ssh: { label: "SSH (tunnel)", desc: "Le serveur se connecte en SSH à l'hôte pour exécuter les checks. Les identifiants SSH de l'hôte sont réutilisés." },
+};
+
+function CopyButton({ text }: { text: string }) {
+  const [done, setDone] = useState(false);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1500); } catch { /* clipboard indispo */ }
+  };
+  return (
+    <button onClick={copy} className="btn-ghost shrink-0 px-2 py-1 text-xs" title="Copier">
+      {done ? <CheckIcon className="h-3.5 w-3.5 text-status-ok" /> : <Copy className="h-3.5 w-3.5" />}
+    </button>
+  );
+}
+
+function SupervisionCard({ host }: { host: Host }) {
+  const { user } = useAuth();
+  const mode = host.monitoring_mode ?? "agentless";
+  const info = MODE_INFO[mode] ?? MODE_INFO.agentless;
+  const [enr, setEnr] = useState<HostEnrollment | null>(null);
+
+  useEffect(() => {
+    if (mode === "agent" && isAdmin(user)) {
+      getHostEnrollment(host.id).then((r) => setEnr(r.data)).catch(() => {});
+    } else {
+      setEnr(null);
+    }
+  }, [host.id, mode, user]);
+
+  const Icon = mode === "agent" ? Radio : mode === "ssh" ? Terminal : Server;
+
+  return (
+    <Card>
+      <SectionTitle title="Superviser cet hôte" icon={Icon} />
+      <div className="mb-3 flex items-center gap-2">
+        <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand">{info.label}</span>
+        <p className="text-xs text-ink-faint">{info.desc}</p>
+      </div>
+
+      {mode === "agent" && (
+        isAdmin(user) ? (
+          enr ? (
+            <div className="space-y-3">
+              <div>
+                <p className="mb-1 text-xs font-medium text-ink-soft">Commande d'installation de l'agent</p>
+                <div className="flex items-start gap-2">
+                  <pre className="flex-1 overflow-x-auto rounded-lg border border-border bg-bg-soft/60 p-3 text-xs text-ink">{enr.install_command}</pre>
+                  <CopyButton text={enr.install_command} />
+                </div>
+                <p className="mt-1 text-[11px] text-ink-faint">
+                  Prérequis : <code>pip install psutil requests</code> et le script <code>agent_example.py</code> (dossier <code>scripts/</code>).
+                  {enr.ingest_key_required ? " La clé d'ingestion est incluse ci-dessus." : " Aucune clé d'ingestion requise (INGEST_API_KEY non défini)."}
+                </p>
+              </div>
+              <details className="text-xs">
+                <summary className="cursor-pointer text-ink-soft">Service systemd (démarrage automatique)</summary>
+                <div className="mt-2 flex items-start gap-2">
+                  <pre className="flex-1 overflow-x-auto rounded-lg border border-border bg-bg-soft/60 p-3 text-[11px] text-ink">{enr.systemd_unit}</pre>
+                  <CopyButton text={enr.systemd_unit} />
+                </div>
+              </details>
+            </div>
+          ) : (
+            <p className="text-xs text-ink-faint">Chargement des instructions d'installation…</p>
+          )
+        ) : (
+          <p className="text-xs text-ink-faint">Les instructions d'installation de l'agent sont réservées aux administrateurs.</p>
+        )
+      )}
+
+      {mode === "ssh" && host.ssh_config && (
+        <p className="text-xs text-ink-faint">
+          Connexion : <b className="text-ink-soft">{(host.ssh_config.user as string) || "?"}@{host.hostname_or_ip}:{String(host.ssh_config.port ?? 22)}</b>.
+          Les checks de cet hôte héritent de ces identifiants.
+        </p>
+      )}
+    </Card>
   );
 }
 
