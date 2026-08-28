@@ -21,6 +21,10 @@ export const login = (email: string, password: string) =>
 export const getMe = () => api.get<User>("/auth/me");
 export const changePassword = (current_password: string, new_password: string) =>
   api.post<{ ok: boolean }>("/auth/change-password", { current_password, new_password });
+export const forgotPassword = (email: string) =>
+  api.post<{ ok: boolean; message: string }>("/auth/forgot-password", { email });
+export const resetPassword = (token: string, new_password: string) =>
+  api.post<{ ok: boolean }>("/auth/reset-password", { token, new_password });
 
 // --- Hosts ---
 export interface LicenseInfo {

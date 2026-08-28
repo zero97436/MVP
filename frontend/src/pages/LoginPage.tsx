@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Loader2, LogIn, KeyRound } from "lucide-react";
 import { api, tokenStore } from "../api/client";
+import { forgotPassword } from "../api/endpoints";
 import { BrandLogo } from "../components/ui/BrandLogo";
 import { useBranding } from "../lib/branding";
 import { useAuth } from "../lib/auth";
@@ -16,6 +17,18 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [ssoEnabled, setSsoEnabled] = useState(false);
+  const [forgotMsg, setForgotMsg] = useState<string | null>(null);
+
+  const onForgot = async () => {
+    setError(null);
+    if (!email) { setError("Saisis d'abord ton e-mail, puis clique sur « Mot de passe oublié »."); return; }
+    try {
+      const { data } = await forgotPassword(email);
+      setForgotMsg(data.message);
+    } catch {
+      setForgotMsg("Si un compte existe, un e-mail de réinitialisation a été envoyé.");
+    }
+  };
 
   // SSO : bouton si activé côté serveur + réception du token au retour du fournisseur.
   useEffect(() => {
@@ -82,7 +95,19 @@ export default function LoginPage() {
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input mb-4 w-full" />
 
         <label className="mb-1 block text-sm font-medium text-ink-soft">Mot de passe</label>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input mb-6 w-full" />
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input mb-1 w-full" />
+
+        <div className="mb-5 text-right">
+          <button type="button" onClick={onForgot} className="text-xs text-brand hover:underline">
+            Mot de passe oublié ?
+          </button>
+        </div>
+
+        {forgotMsg && (
+          <div className="mb-4 rounded-lg border border-status-ok/30 bg-status-ok/10 p-2.5 text-sm text-status-ok">
+            {forgotMsg}
+          </div>
+        )}
 
         <button type="submit" disabled={loading} className="btn-primary w-full py-2.5">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}

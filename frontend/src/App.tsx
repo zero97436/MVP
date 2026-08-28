@@ -10,6 +10,7 @@ import { BrandingProvider } from "./lib/branding";
 // Code splitting : chaque page est chargée à la demande.
 const StatusPage = lazy(() => import("./pages/StatusPage"));
 const TvPage = lazy(() => import("./pages/TvPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const MonitoringPage = lazy(() => import("./pages/MonitoringPage"));
 const HostsPage = lazy(() => import("./pages/HostsPage"));
@@ -40,6 +41,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/status" element={<Suspense fallback={null}><StatusPage /></Suspense>} />
+        <Route path="/reset-password" element={<Suspense fallback={null}><ResetPasswordPage /></Suspense>} />
         <Route path="/tv" element={<ProtectedRoute><Suspense fallback={null}><TvPage /></Suspense></ProtectedRoute>} />
         <Route
           element={
