@@ -135,7 +135,7 @@ export default function IncidentCenterPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Incident Center" subtitle="Gestion centralisée des alertes actives" />
+      <PageHeader title="Incident Center" subtitle="Gestion centralisée des alertes actives" helpTopic="incidents" />
 
       <MaintenancePanel />
 
