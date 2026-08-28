@@ -14,9 +14,21 @@ router = APIRouter(
 )
 
 
-def _sync_is_admin(data: dict) -> None:
+def _valid_role_names(db: Session) -> set[str]:
+    from app.core.rbac import BUILTIN_ROLES
+    from app.models.role import Role
+
+    names = set(BUILTIN_ROLES)
+    names.update(r.name for r in db.query(Role).all())
+    return names
+
+
+def _sync_is_admin(data: dict, db: Session) -> None:
     if "role" in data and data["role"] is not None:
         role = data["role"].value if hasattr(data["role"], "value") else data["role"]
+        role = str(role).strip().lower()
+        if role not in _valid_role_names(db):
+            raise HTTPException(400, f"Rôle inconnu : {role}")
         data["role"] = role
         data["is_admin"] = role == UserRole.ADMIN.value
 
@@ -33,7 +45,7 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(400, "Email déjà utilisé")
     data = payload.model_dump()
     pwd = data.pop("password")
-    _sync_is_admin(data)
+    _sync_is_admin(data, db)
     return repo.create(hashed_password=hash_password(pwd), is_active=True, **data)
 
 
@@ -48,7 +60,7 @@ def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db)
         user.hashed_password = hash_password(data.pop("password"))
     else:
         data.pop("password", None)
-    _sync_is_admin(data)
+    _sync_is_admin(data, db)
     return repo.update(user, **data)
 
 
