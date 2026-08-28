@@ -93,6 +93,7 @@ export default function HostDetailPage() {
         <ArrowLeft className="h-4 w-4" /> Hosts
       </Link>
       <PageHeader
+        helpTopic="hosts"
         title={host.name}
         subtitle={`${host.hostname_or_ip} · ${host.environment}`}
         actions={<StatusBadge status={status} label={undefined} />}
