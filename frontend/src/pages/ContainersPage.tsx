@@ -59,6 +59,7 @@ export default function ContainersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        helpTopic="containers"
         title="Conteneurs"
         subtitle="Supervision Docker — état et ressources des conteneurs de l'hôte"
         actions={
