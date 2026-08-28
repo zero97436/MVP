@@ -6,13 +6,16 @@ export function Card({
   children,
   className,
   hover,
+  id,
 }: {
   children: ReactNode;
   className?: string;
   hover?: boolean;
+  id?: string;
 }) {
   return (
     <div
+      id={id}
       className={cn(
         "card p-5",
         hover && "transition hover:border-ink-faint/60 hover:shadow-glow",
