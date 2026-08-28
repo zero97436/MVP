@@ -108,6 +108,7 @@ export default function TicketsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        helpTopic="tickets"
         title="Tickets"
         subtitle="Gestion des incidents ITSM — création, suivi et intégration externe"
         actions={editable && (
