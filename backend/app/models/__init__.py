@@ -20,6 +20,7 @@ from app.models.branding import Branding
 from app.models.audit_log import AuditLog
 from app.models.tenant import Tenant
 from app.models.knowledge import KnowledgeDocument
+from app.models.role import Role
 
 __all__ = [
     "ApmSample",
@@ -29,6 +30,7 @@ __all__ = [
     "AuditLog",
     "Tenant",
     "KnowledgeDocument",
+    "Role",
     "Ticket",
     "TicketTask",
     "TicketComment",
