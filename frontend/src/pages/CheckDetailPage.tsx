@@ -105,6 +105,7 @@ export default function CheckDetailPage() {
         <ArrowLeft className="h-4 w-4" /> Checks
       </Link>
       <PageHeader
+        helpTopic="checks"
         title={check.name}
         subtitle={`${check.type} · intervalle ${check.interval_seconds}s · timeout ${check.timeout_seconds}s`}
         actions={
