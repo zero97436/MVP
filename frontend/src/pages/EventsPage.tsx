@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Bell, BellOff, CheckCheck, Wrench, Wand2, Activity, Loader2, ChevronDown, type LucideIcon,
+  Bell, BellOff, CheckCheck, Wrench, Wand2, Activity, Loader2, ChevronDown, Search, type LucideIcon,
 } from "lucide-react";
 import { listEvents } from "../api/endpoints";
 import type { EventLog } from "../types";
@@ -43,21 +43,23 @@ export default function EventsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [filter, setFilter] = useState("");
+  const [level, setLevel] = useState("");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     setLoading(true);
-    listEvents({ type: filter || undefined, limit: PAGE, offset: 0 })
+    listEvents({ type: filter || undefined, level: level || undefined, limit: PAGE, offset: 0 })
       .then((r) => {
         setEvents(r.data);
         setHasMore(r.data.length === PAGE);
       })
       .finally(() => setLoading(false));
-  }, [filter]);
+  }, [filter, level]);
 
   const loadMore = async () => {
     setLoadingMore(true);
     try {
-      const { data } = await listEvents({ type: filter || undefined, limit: PAGE, offset: events.length });
+      const { data } = await listEvents({ type: filter || undefined, level: level || undefined, limit: PAGE, offset: events.length });
       setEvents((e) => [...e, ...data]);
       setHasMore(data.length === PAGE);
     } finally {
@@ -65,9 +67,34 @@ export default function EventsPage() {
     }
   };
 
+  // Recherche texte (message, acteur, libellé du type) côté client sur les événements chargés.
+  const shown = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return events;
+    return events.filter((e) => {
+      const label = (TYPE_META[e.type]?.label ?? e.type).toLowerCase();
+      return e.message.toLowerCase().includes(q) || (e.actor ?? "").toLowerCase().includes(q) || label.includes(q);
+    });
+  }, [events, search]);
+
   return (
     <div className="space-y-6">
       <PageHeader title="Historique des événements" subtitle="Journal global : alertes, acquittements, maintenances, remédiations" />
+
+      {/* Recherche + niveau */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[220px] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher (hôte, message, utilisateur…)" className="input w-full pl-9" />
+        </div>
+        <select value={level} onChange={(e) => setLevel(e.target.value)} className="input">
+          <option value="">Tous niveaux</option>
+          <option value="info">Info</option>
+          <option value="warning">Avertissement</option>
+          <option value="critical">Critique</option>
+        </select>
+      </div>
 
       <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-bg-soft p-1">
         {FILTERS.map((f) => (
@@ -86,12 +113,12 @@ export default function EventsPage() {
 
       {loading ? (
         <Loading />
-      ) : events.length === 0 ? (
-        <EmptyState message="Aucun événement." />
+      ) : shown.length === 0 ? (
+        <EmptyState message={search ? "Aucun événement ne correspond à la recherche." : "Aucun événement."} />
       ) : (
         <Card className="p-0">
           <div className="divide-y divide-border">
-            {events.map((e) => {
+            {shown.map((e) => {
               const meta = TYPE_META[e.type] ?? { label: e.type, icon: Activity };
               const Icon = meta.icon;
               return (
