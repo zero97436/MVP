@@ -2,14 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============ THÈME ============
+   Palette pilotée par variables (triplets RGB pour le <alpha-value> Tailwind).
+   :root nu = SOMBRE (défaut + système sombre). Le mode clair s'active soit
+   explicitement (data-theme="light"), soit en « système » sur un OS clair. */
 :root {
-  /* Couleur d'accent — surchargée par le branding (plan Professional). */
+  /* Accent — surchargeable par le branding (plan Professional). */
   --brand-rgb: 59 130 246;
   --brand-soft-rgb: 29 78 216;
+
+  /* Sombre (défaut) */
+  --bg: 11 18 32;
+  --bg-soft: 14 22 38;
+  --card: 17 24 39;
+  --border: 31 41 55;
+  --border-soft: 23 32 51;
+  --ink: 229 234 242;
+  --ink-soft: 148 163 184;
+  --ink-faint: 100 116 139;
+  --scroll: 31 41 55;
+  color-scheme: dark;
 }
 
-:root {
-  color-scheme: dark;
+/* Palette claire (valeurs communes aux 2 déclencheurs) */
+:root[data-theme="light"],
+.theme-light-vars {
+  --bg: 247 249 252;
+  --bg-soft: 255 255 255;
+  --card: 255 255 255;
+  --border: 226 232 240;
+  --border-soft: 241 245 249;
+  --ink: 15 23 42;
+  --ink-soft: 71 85 105;
+  --ink-faint: 148 163 184;
+  --scroll: 203 213 225;
+  color-scheme: light;
+}
+
+/* Mode « système » (aucun data-theme) sur un OS clair -> palette claire. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]):not([data-theme="light"]) {
+    --bg: 247 249 252;
+    --bg-soft: 255 255 255;
+    --card: 255 255 255;
+    --border: 226 232 240;
+    --border-soft: 241 245 249;
+    --ink: 15 23 42;
+    --ink-soft: 71 85 105;
+    --ink-faint: 148 163 184;
+    --scroll: 203 213 225;
+    color-scheme: light;
+  }
 }
 
 html,
@@ -23,21 +66,18 @@ body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
-/* Scrollbars premium dark */
+/* Scrollbars (suivent le thème) */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #1f2937 transparent;
+  scrollbar-color: rgb(var(--scroll)) transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #1f2937;
+  background: rgb(var(--scroll));
   border-radius: 9999px;
-}
-*::-webkit-scrollbar-thumb:hover {
-  background: #2b3a52;
 }
 
 @layer components {

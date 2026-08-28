@@ -1,4 +1,5 @@
-import { LogOut, Clock, ShieldCheck, Search, MonitorPlay } from "lucide-react";
+import { useState } from "react";
+import { LogOut, Clock, ShieldCheck, Search, MonitorPlay, Moon, Sun, Monitor } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../lib/auth";
 import { useNow } from "../../hooks/useNow";
@@ -6,6 +7,30 @@ import type { CheckStatus } from "../../types";
 import { statusMeta } from "../../lib/status";
 import { ROLE_LABEL } from "../../lib/permissions";
 import { StatusDot } from "../ui/StatusBadge";
+import { applyTheme, getTheme, type Theme } from "../../lib/theme";
+
+function ThemeSwitcher() {
+  const [theme, setTheme] = useState<Theme>(getTheme());
+  const opts: { v: Theme; icon: typeof Moon; label: string }[] = [
+    { v: "dark", icon: Moon, label: "Sombre" },
+    { v: "light", icon: Sun, label: "Clair" },
+    { v: "system", icon: Monitor, label: "Système" },
+  ];
+  return (
+    <div className="hidden items-center gap-0.5 rounded-lg border border-border bg-bg p-0.5 md:flex" title="Thème d'affichage">
+      {opts.map((o) => (
+        <button
+          key={o.v}
+          onClick={() => { applyTheme(o.v); setTheme(o.v); }}
+          className={`grid h-6 w-6 place-items-center rounded ${theme === o.v ? "bg-brand text-white" : "text-ink-faint hover:text-ink"}`}
+          title={o.label}
+        >
+          <o.icon className="h-3.5 w-3.5" />
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function Topbar({ globalStatus }: { globalStatus: CheckStatus }) {
   const { user, logout } = useAuth();
@@ -33,6 +58,7 @@ export function Topbar({ globalStatus }: { globalStatus: CheckStatus }) {
         <Link to="/tv" className="hidden items-center gap-1.5 rounded-lg border border-border bg-bg px-2.5 py-1.5 text-xs text-ink-faint transition-colors hover:text-ink lg:flex" title="Mode TV plein écran (écran mural)">
           <MonitorPlay className="h-3.5 w-3.5" /> TV
         </Link>
+        <ThemeSwitcher />
         <span className="hidden items-center gap-2 text-ink-soft sm:flex">
           <Clock className="h-4 w-4" />
           <span className="tabular-nums">{now.toLocaleString()}</span>

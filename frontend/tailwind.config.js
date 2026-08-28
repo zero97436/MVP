@@ -5,21 +5,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Palette NOC dark premium (Datadog / Grafana / GitHub Dark inspired)
+        // Palette pilotée par variables CSS (voir index.css) -> thème clair/sombre.
         bg: {
-          DEFAULT: "#0B1220", // fond global
-          soft: "#0E1626",
-          elevated: "#111827", // cartes
+          DEFAULT: "rgb(var(--bg) / <alpha-value>)",
+          soft: "rgb(var(--bg-soft) / <alpha-value>)",
+          elevated: "rgb(var(--card) / <alpha-value>)",
         },
-        card: "#111827",
+        card: "rgb(var(--card) / <alpha-value>)",
         border: {
-          DEFAULT: "#1F2937",
-          soft: "#172033",
+          DEFAULT: "rgb(var(--border) / <alpha-value>)",
+          soft: "rgb(var(--border-soft) / <alpha-value>)",
         },
         ink: {
-          DEFAULT: "#E5EAF2", // texte principal
-          soft: "#94A3B8", // texte secondaire
-          faint: "#64748B", // texte tertiaire
+          DEFAULT: "rgb(var(--ink) / <alpha-value>)",
+          soft: "rgb(var(--ink-soft) / <alpha-value>)",
+          faint: "rgb(var(--ink-faint) / <alpha-value>)",
         },
         status: {
           ok: "#10B981",
