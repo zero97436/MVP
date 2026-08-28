@@ -61,6 +61,7 @@ export default function TemplatesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        helpTopic="templates"
         title="Templates"
         subtitle="Modèles de checks — appliquez un jeu de checks standard à un hôte en un clic"
       />
