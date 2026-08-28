@@ -48,6 +48,8 @@ export interface Host {
   description?: string | null;
   environment: string;
   is_active: boolean;
+  monitoring_mode: string;
+  ssh_config?: Record<string, unknown> | null;
   parent_host_id?: number | null;
   location?: string | null;
   latitude?: number | null;
