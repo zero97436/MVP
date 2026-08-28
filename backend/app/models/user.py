@@ -14,7 +14,7 @@ class User(Base, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # Rôle RBAC : admin | operator | viewer.
-    role: Mapped[str] = mapped_column(String(16), default="viewer", nullable=False)
+    role: Mapped[str] = mapped_column(String(64), default="viewer", nullable=False)
     # Multi-tenant : NULL = personnel MSP global (voit tout) ; sinon cloisonné au tenant.
     tenant_id: Mapped[int | None] = mapped_column(
         ForeignKey("tenants.id", ondelete="SET NULL"), index=True
