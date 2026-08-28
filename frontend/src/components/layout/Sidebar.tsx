@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Bot,
   BookOpen,
+  LifeBuoy,
   Settings,
   Building2,
   ChevronLeft,
@@ -55,6 +56,7 @@ const NAV: NavItem[] = [
   { to: "/knowledge", label: "Connaissances", icon: BookOpen },
   { to: "/tenants", label: "Tenants", icon: Building2 },
   { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/docs", label: "Documentation", icon: LifeBuoy },
 ];
 
 export function Sidebar({
