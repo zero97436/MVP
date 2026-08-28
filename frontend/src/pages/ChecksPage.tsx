@@ -124,6 +124,7 @@ export default function ChecksPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        helpTopic="checks"
         title="Checks"
         subtitle={`${checks.length} sondes configurées`}
         actions={
