@@ -67,6 +67,7 @@ export default function KnowledgePage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        helpTopic="knowledge"
         title="Connaissances"
         subtitle="Base de connaissances (RAG) — l'assistant IA s'appuie sur vos runbooks pour répondre"
         actions={editable && (
