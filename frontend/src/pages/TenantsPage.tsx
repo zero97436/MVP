@@ -66,7 +66,7 @@ export default function TenantsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Tenants" subtitle="Multi-tenant MSP — clients cloisonnés sur une seule instance" />
+      <PageHeader title="Tenants" subtitle="Multi-tenant MSP — clients cloisonnés sur une seule instance" helpTopic="tenants" />
 
       <Card>
         <SectionTitle title="Créer un tenant (client)" icon={Plus} />
