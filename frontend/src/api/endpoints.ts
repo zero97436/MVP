@@ -12,7 +12,6 @@ import type {
   Maintenance,
   NotificationChannel,
   User,
-  UserRole,
 } from "../types";
 
 // --- Auth ---
@@ -354,11 +353,28 @@ export const createUser = (data: {
   email: string;
   password: string;
   full_name?: string;
-  role: UserRole;
+  role: string;
 }) => api.post<User>("/users", data);
-export const updateUser = (id: number, data: Partial<{ role: UserRole; is_active: boolean; password: string; full_name: string }>) =>
+export const updateUser = (id: number, data: Partial<{ role: string; is_active: boolean; password: string; full_name: string }>) =>
   api.put<User>(`/users/${id}`, data);
 export const deleteUser = (id: number) => api.delete(`/users/${id}`);
+
+// --- Rôles personnalisés (RBAC par section, admin) ---
+export interface RoleSection { key: string; label: string }
+export interface RoleDef {
+  id?: number;
+  name: string;
+  builtin: boolean;
+  description?: string | null;
+  permissions: string[];
+}
+export const listRoles = () =>
+  api.get<{ sections: RoleSection[]; roles: RoleDef[] }>("/roles");
+export const createRole = (data: { name: string; description?: string; permissions: string[] }) =>
+  api.post<{ id: number; name: string }>("/roles", data);
+export const updateRole = (id: number, data: { description?: string; permissions: string[] }) =>
+  api.put(`/roles/${id}`, { name: "", ...data });
+export const deleteRole = (id: number) => api.delete(`/roles/${id}`);
 
 // --- Admin (rétention / volumétrie) ---
 export interface TableStat {
