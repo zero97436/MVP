@@ -248,12 +248,12 @@ export default function DashboardPage() {
     ),
     kpi: (
       <MotionGrid className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <Kpi label="Hôtes UP" value={hostsOnline} tone="ok" icon={Server} />
-        <Kpi label="Hôtes DOWN" value={hostsOffline} tone={hostsOffline ? "critical" : "muted"} icon={ServerOff} />
-        <Kpi label="OK" value={c.OK ?? 0} tone="ok" icon={CheckCircle2} />
-        <Kpi label="Warning" value={c.WARNING ?? 0} tone={(c.WARNING ?? 0) ? "warning" : "muted"} icon={AlertTriangle} />
-        <Kpi label="Critical" value={c.CRITICAL ?? 0} tone={(c.CRITICAL ?? 0) ? "critical" : "muted"} icon={XCircle} />
-        <Kpi label="Unknown" value={c.UNKNOWN ?? 0} tone="muted" icon={HelpCircle} />
+        <Kpi label="Hôtes UP" value={hostsOnline} tone="ok" icon={Server} to="/hosts" />
+        <Kpi label="Hôtes DOWN" value={hostsOffline} tone={hostsOffline ? "critical" : "muted"} icon={ServerOff} to="/hosts" />
+        <Kpi label="OK" value={c.OK ?? 0} tone="ok" icon={CheckCircle2} to="/checks" />
+        <Kpi label="Warning" value={c.WARNING ?? 0} tone={(c.WARNING ?? 0) ? "warning" : "muted"} icon={AlertTriangle} to="/incidents" />
+        <Kpi label="Critical" value={c.CRITICAL ?? 0} tone={(c.CRITICAL ?? 0) ? "critical" : "muted"} icon={XCircle} to="/incidents" />
+        <Kpi label="Unknown" value={c.UNKNOWN ?? 0} tone="muted" icon={HelpCircle} to="/checks" />
       </MotionGrid>
     ),
     incidents: (
@@ -404,13 +404,10 @@ const TONE: Record<string, { text: string; bg: string; ring: string }> = {
   muted: { text: "text-ink-soft", bg: "bg-bg-soft", ring: "ring-border" },
 };
 
-function Kpi({ label, value, tone, icon: Icon }: { label: string; value: number; tone: string; icon: typeof Server }) {
+function Kpi({ label, value, tone, icon: Icon, to }: { label: string; value: number; tone: string; icon: typeof Server; to?: string }) {
   const t = TONE[tone] ?? TONE.muted;
-  return (
-    <motion.div
-      variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
-      className={cn("card flex items-center gap-3 p-3 ring-1 ring-inset", t.ring)}
-    >
+  const inner = (
+    <>
       <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-lg", t.bg, t.text)}>
         <Icon className="h-4 w-4" />
       </span>
@@ -418,6 +415,17 @@ function Kpi({ label, value, tone, icon: Icon }: { label: string; value: number;
         <p className={cn("text-2xl font-bold leading-none tabular-nums", t.text)}>{value}</p>
         <p className="mt-1 truncate text-[11px] uppercase tracking-wide text-ink-faint">{label}</p>
       </div>
+    </>
+  );
+  return (
+    <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
+      {to ? (
+        <Link to={to} className={cn("card flex items-center gap-3 p-3 ring-1 ring-inset transition-all hover:-translate-y-0.5 hover:shadow-lg", t.ring)}>
+          {inner}
+        </Link>
+      ) : (
+        <div className={cn("card flex items-center gap-3 p-3 ring-1 ring-inset", t.ring)}>{inner}</div>
+      )}
     </motion.div>
   );
 }

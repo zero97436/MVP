@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Mail, Webhook, Plus, Users, Trash2, ShieldAlert, Database, Eraser, MessageSquare, Send, Users2, Hash, Phone, Terminal } from "lucide-react";
+import { Mail, Webhook, Plus, Users, Trash2, ShieldAlert, Database, Eraser, MessageSquare, Send, Users2, Hash, Phone, Terminal, KeyRound } from "lucide-react";
 import {
   createChannel,
   createUser,
@@ -42,6 +42,7 @@ import { BrandingPanel } from "../components/BrandingPanel";
 import { Card, SectionTitle } from "../components/ui/Card";
 import { EmptyState, ErrorState, Loading } from "../components/States";
 import { SystemHealthCard } from "../components/SystemHealthCard";
+import { changePassword } from "../api/endpoints";
 import { useAuth } from "../lib/auth";
 import { isAdmin, ROLE_LABEL } from "../lib/permissions";
 
@@ -60,6 +61,7 @@ export default function SettingsPage() {
 
   const [users, setUsers] = useState<User[]>([]);
   const [userForm, setUserForm] = useState(EMPTY_USER);
+  const [userConfirm, setUserConfirm] = useState("");
   const [userErr, setUserErr] = useState<string | null>(null);
 
   const [stats, setStats] = useState<DbStats | null>(null);
@@ -109,9 +111,14 @@ export default function SettingsPage() {
   const submitUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setUserErr(null);
+    if (userForm.password !== userConfirm) {
+      setUserErr("Les deux mots de passe ne correspondent pas.");
+      return;
+    }
     try {
       await createUser(userForm);
       setUserForm(EMPTY_USER);
+      setUserConfirm("");
       load();
     } catch {
       setUserErr("Création impossible (email déjà utilisé ou mot de passe trop court).");
@@ -143,6 +150,8 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <PageHeader title="Settings" subtitle="Canaux de notification, utilisateurs et préférences" />
 
+      <AccountCard />
+
       <BrandingPanel />
 
       {admin && <SystemHealthCard />}
@@ -151,11 +160,14 @@ export default function SettingsPage() {
       {admin && (
         <Card>
           <SectionTitle title="Utilisateurs & rôles" icon={Users} />
-          <form onSubmit={submitUser} className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-4">
+          <form onSubmit={submitUser} className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-5">
             <input required type="email" placeholder="Email" value={userForm.email}
               onChange={(e) => setUserForm({ ...userForm, email: e.target.value })} className="input" />
             <input required type="password" placeholder="Mot de passe (min 6)" value={userForm.password}
               onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} className="input" />
+            <input required type="password" placeholder="Confirmer le mot de passe" value={userConfirm}
+              onChange={(e) => setUserConfirm(e.target.value)}
+              className={`input ${userConfirm && userForm.password !== userConfirm ? "ring-1 ring-status-critical" : ""}`} />
             <select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value as UserRole })} className="input">
               {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
             </select>
@@ -300,5 +312,45 @@ function RetentionStat({
         rétention {days} j · plus ancien : {stat.oldest ? formatDate(stat.oldest) : "—"}
       </p>
     </div>
+  );
+}
+
+function AccountCard() {
+  const { user } = useAuth();
+  const [cur, setCur] = useState("");
+  const [pw, setPw] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMsg(null);
+    if (pw !== confirm) { setMsg({ ok: false, text: "Les deux mots de passe ne correspondent pas." }); return; }
+    if (pw.length < 6) { setMsg({ ok: false, text: "Le mot de passe doit faire au moins 6 caractères." }); return; }
+    setBusy(true);
+    try {
+      await changePassword(cur, pw);
+      setMsg({ ok: true, text: "Mot de passe modifié ✅" });
+      setCur(""); setPw(""); setConfirm("");
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setMsg({ ok: false, text: detail ?? "Modification impossible." });
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Card>
+      <SectionTitle title="Mon compte" icon={KeyRound} />
+      <p className="mb-3 text-xs text-ink-faint">Connecté en tant que <b className="text-ink-soft">{user?.email}</b> ({user?.role}).</p>
+      <form onSubmit={submit} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <input required type="password" placeholder="Mot de passe actuel" value={cur} onChange={(e) => setCur(e.target.value)} className="input" autoComplete="current-password" />
+        <input required type="password" placeholder="Nouveau mot de passe" value={pw} onChange={(e) => setPw(e.target.value)} className="input" autoComplete="new-password" />
+        <input required type="password" placeholder="Confirmer le nouveau" value={confirm} onChange={(e) => setConfirm(e.target.value)}
+               className={`input ${confirm && pw !== confirm ? "ring-1 ring-status-critical" : ""}`} autoComplete="new-password" />
+        <button disabled={busy} className="btn-primary sm:col-span-3">Changer mon mot de passe</button>
+      </form>
+      {msg && <p className={`mt-2 text-sm ${msg.ok ? "text-status-ok" : "text-status-critical"}`}>{msg.text}</p>}
+    </Card>
   );
 }

@@ -19,6 +19,8 @@ import type {
 export const login = (email: string, password: string) =>
   api.post<{ access_token: string }>("/auth/login", { email, password });
 export const getMe = () => api.get<User>("/auth/me");
+export const changePassword = (current_password: string, new_password: string) =>
+  api.post<{ ok: boolean }>("/auth/change-password", { current_password, new_password });
 
 // --- Hosts ---
 export interface LicenseInfo {
