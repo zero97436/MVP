@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Mail, Webhook, Plus, Users, Trash2, ShieldAlert, Database, Eraser, MessageSquare, Send, Users2, Hash, Phone, Terminal, KeyRound } from "lucide-react";
+import { Mail, Webhook, Plus, Users, Trash2, ShieldAlert, Database, Eraser, MessageSquare, Send, Users2, Hash, Phone, Terminal, KeyRound, ShieldCheck, Pencil, X, Check } from "lucide-react";
 import {
   createChannel,
   createUser,
@@ -10,9 +10,15 @@ import {
   runRetention,
   testChannel,
   updateUser,
+  listRoles,
+  createRole,
+  updateRole,
+  deleteRole,
   type DbStats,
+  type RoleDef,
+  type RoleSection,
 } from "../api/endpoints";
-import type { NotificationChannel, User, UserRole } from "../types";
+import type { NotificationChannel, User } from "../types";
 
 type ChannelType = NotificationChannel["type"];
 const CHANNEL_TYPES: ChannelType[] = ["webhook", "email", "slack", "telegram", "teams", "discord", "sms", "script"];
@@ -44,11 +50,12 @@ import { EmptyState, ErrorState, Loading } from "../components/States";
 import { SystemHealthCard } from "../components/SystemHealthCard";
 import { changePassword } from "../api/endpoints";
 import { useAuth } from "../lib/auth";
-import { isAdmin, ROLE_LABEL } from "../lib/permissions";
+import { isAdmin } from "../lib/permissions";
 
 const EMPTY_CHANNEL = { name: "", type: "webhook" as ChannelType, config_json: '{"url": ""}', escalation_only: false, active_hours: "" };
-const EMPTY_USER = { email: "", password: "", role: "viewer" as UserRole };
-const ROLES: UserRole[] = ["admin", "operator", "viewer"];
+const EMPTY_USER = { email: "", password: "", role: "viewer" };
+const BUILTIN_ROLE_LABEL: Record<string, string> = { admin: "Administrateur", operator: "Opérateur", viewer: "Lecteur" };
+const roleLabel = (name: string) => BUILTIN_ROLE_LABEL[name] ?? name;
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -60,6 +67,8 @@ export default function SettingsPage() {
   const [chForm, setChForm] = useState(EMPTY_CHANNEL);
 
   const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<RoleDef[]>([]);
+  const [sections, setSections] = useState<RoleSection[]>([]);
   const [userForm, setUserForm] = useState(EMPTY_USER);
   const [userConfirm, setUserConfirm] = useState("");
   const [userErr, setUserErr] = useState<string | null>(null);
@@ -76,8 +85,14 @@ export default function SettingsPage() {
     if (admin) {
       listUsers().then((r) => setUsers(r.data)).catch(() => {});
       getDbStats().then((r) => setStats(r.data)).catch(() => {});
+      loadRoles();
     }
   };
+
+  const loadRoles = () =>
+    listRoles()
+      .then((r) => { setRoles(r.data.roles); setSections(r.data.sections); })
+      .catch(() => {});
   useEffect(load, [admin]);
 
   const purge = async () => {
@@ -134,7 +149,7 @@ export default function SettingsPage() {
     }
   };
 
-  const changeRole = async (u: User, role: UserRole) => {
+  const changeRole = async (u: User, role: string) => {
     await updateUser(u.id, { role });
     load();
   };
@@ -168,8 +183,8 @@ export default function SettingsPage() {
             <input required type="password" placeholder="Confirmer le mot de passe" value={userConfirm}
               onChange={(e) => setUserConfirm(e.target.value)}
               className={`input ${userConfirm && userForm.password !== userConfirm ? "ring-1 ring-status-critical" : ""}`} />
-            <select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value as UserRole })} className="input">
-              {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
+            <select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value })} className="input">
+              {roles.map((r) => <option key={r.name} value={r.name}>{roleLabel(r.name)}</option>)}
             </select>
             <button className="btn-primary"><Plus className="h-4 w-4" /> Ajouter</button>
           </form>
@@ -184,12 +199,12 @@ export default function SettingsPage() {
                 </div>
                 <select
                   value={u.role}
-                  onChange={(e) => changeRole(u, e.target.value as UserRole)}
+                  onChange={(e) => changeRole(u, e.target.value)}
                   disabled={u.id === user?.id}
                   className="input py-1.5 text-xs"
                   title={u.id === user?.id ? "Vous ne pouvez pas changer votre propre rôle ici" : undefined}
                 >
-                  {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
+                  {roles.map((r) => <option key={r.name} value={r.name}>{roleLabel(r.name)}</option>)}
                 </select>
                 {u.id !== user?.id && (
                   <button onClick={() => removeUser(u)} className="text-status-critical/80 hover:text-status-critical">
@@ -201,6 +216,9 @@ export default function SettingsPage() {
           </div>
         </Card>
       )}
+
+      {/* Rôles personnalisés (admin) */}
+      {admin && <RolesCard roles={roles} sections={sections} onChange={loadRoles} />}
 
       {/* Maintenance / rétention (admin) */}
       {admin && stats && (
@@ -351,6 +369,109 @@ function AccountCard() {
         <button disabled={busy} className="btn-primary sm:col-span-3">Changer mon mot de passe</button>
       </form>
       {msg && <p className={`mt-2 text-sm ${msg.ok ? "text-status-ok" : "text-status-critical"}`}>{msg.text}</p>}
+    </Card>
+  );
+}
+
+// --- Rôles personnalisés : droits de modification par section ---
+function RolesCard({ roles, sections, onChange }: { roles: RoleDef[]; sections: RoleSection[]; onChange: () => void }) {
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+  const [perms, setPerms] = useState<string[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  const [editing, setEditing] = useState<RoleDef | null>(null);
+
+  const toggle = (key: string) =>
+    setPerms((p) => (p.includes(key) ? p.filter((x) => x !== key) : [...p, key]));
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErr(null);
+    try {
+      if (editing) {
+        await updateRole(editing.id!, { description: desc, permissions: perms });
+      } else {
+        await createRole({ name, description: desc, permissions: perms });
+      }
+      setName(""); setDesc(""); setPerms([]); setEditing(null);
+      onChange();
+    } catch (e2: unknown) {
+      const detail = (e2 as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setErr(detail ?? "Enregistrement impossible.");
+    }
+  };
+
+  const startEdit = (r: RoleDef) => {
+    setEditing(r); setName(r.name); setDesc(r.description ?? ""); setPerms(r.permissions); setErr(null);
+  };
+  const cancel = () => { setEditing(null); setName(""); setDesc(""); setPerms([]); setErr(null); };
+
+  const remove = async (r: RoleDef) => {
+    if (confirm(`Supprimer le rôle « ${r.name} » ? Les utilisateurs concernés repasseront en lecture seule.`)) {
+      await deleteRole(r.id!);
+      onChange();
+    }
+  };
+
+  const custom = roles.filter((r) => !r.builtin);
+
+  return (
+    <Card>
+      <SectionTitle title="Rôles personnalisés" icon={ShieldCheck} />
+      <p className="mb-3 text-xs text-ink-faint">
+        Créez un profil avec des droits de modification à la carte. La lecture reste ouverte à tout compte ;
+        les cases cochées autorisent la <b>création / modification / suppression</b> dans la section.
+      </p>
+
+      <form onSubmit={submit} className="mb-4 space-y-3 rounded-lg border border-border bg-bg-soft/40 p-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <input required placeholder="Nom du rôle (ex. superviseur-réseau)" value={name}
+            disabled={!!editing}
+            onChange={(e) => setName(e.target.value)} className="input" />
+          <input placeholder="Description (optionnel)" value={desc}
+            onChange={(e) => setDesc(e.target.value)} className="input" />
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {sections.map((s) => (
+            <label key={s.key} className={`flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-xs ${perms.includes(s.key) ? "border-brand/50 bg-brand/10 text-ink" : "border-border text-ink-soft"}`}>
+              <input type="checkbox" checked={perms.includes(s.key)} onChange={() => toggle(s.key)} className="accent-brand" />
+              {s.label}
+            </label>
+          ))}
+        </div>
+        {err && <p className="text-sm text-status-critical">{err}</p>}
+        <div className="flex gap-2">
+          <button className="btn-primary">
+            {editing ? <><Check className="h-4 w-4" /> Enregistrer</> : <><Plus className="h-4 w-4" /> Créer le rôle</>}
+          </button>
+          {editing && <button type="button" onClick={cancel} className="btn-ghost"><X className="h-4 w-4" /> Annuler</button>}
+        </div>
+      </form>
+
+      {custom.length === 0 ? (
+        <p className="text-sm text-ink-faint">Aucun rôle personnalisé pour l'instant.</p>
+      ) : (
+        <div className="space-y-2">
+          {custom.map((r) => (
+            <div key={r.id} className="flex items-start gap-3 rounded-lg border border-border bg-bg-soft/50 px-3 py-2.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-ink">{r.name}</p>
+                {r.description && <p className="text-xs text-ink-faint">{r.description}</p>}
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {r.permissions.length === 0
+                    ? <span className="text-xs text-ink-faint">Lecture seule</span>
+                    : r.permissions.map((p) => {
+                        const lbl = sections.find((s) => s.key === p)?.label ?? p;
+                        return <span key={p} className="rounded bg-brand/10 px-1.5 py-0.5 text-[11px] text-brand">{lbl}</span>;
+                      })}
+                </div>
+              </div>
+              <button onClick={() => startEdit(r)} className="text-ink-soft hover:text-ink" title="Modifier"><Pencil className="h-4 w-4" /></button>
+              <button onClick={() => remove(r)} className="text-status-critical/80 hover:text-status-critical" title="Supprimer"><Trash2 className="h-4 w-4" /></button>
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }
