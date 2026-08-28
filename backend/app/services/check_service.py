@@ -25,12 +25,20 @@ class CheckService:
             logger.warning("No plugin for check type '%s'", check.type)
             result_data = _unknown(f"Unsupported check type: {check.type}")
         else:
+            cfg = decrypt_config(check.config_json or {})
+            # Mode SSH (tunnel) : l'hôte porte des identifiants SSH partagés que les
+            # checks héritent par défaut (le check peut toujours les surcharger).
+            host = check.host
+            if getattr(host, "monitoring_mode", None) == "ssh" and host.ssh_config:
+                shared = decrypt_config(host.ssh_config)
+                defaults = {k: shared[k] for k in ("port", "user", "password") if shared.get(k)}
+                cfg = {**defaults, **cfg}
             ctx = CheckContext(
                 hostname_or_ip=check.host.hostname_or_ip,
                 timeout_seconds=check.timeout_seconds,
                 warning_threshold=check.warning_threshold,
                 critical_threshold=check.critical_threshold,
-                config=decrypt_config(check.config_json or {}),
+                config=cfg,
                 host_id=check.host_id,
                 check_id=check.id,
                 db=self.db,
