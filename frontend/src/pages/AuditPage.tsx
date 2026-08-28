@@ -40,6 +40,7 @@ export default function AuditPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        helpTopic="audit"
         title="Audit"
         subtitle="Journal d'audit — qui a fait quoi, quand, depuis où (enregistrements immuables)"
         actions={
