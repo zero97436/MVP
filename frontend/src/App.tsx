@@ -33,6 +33,7 @@ const TenantsPage = lazy(() => import("./pages/TenantsPage"));
 const ChatPage = lazy(() => import("./pages/ChatPage"));
 const KnowledgePage = lazy(() => import("./pages/KnowledgePage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const DocsPage = lazy(() => import("./pages/DocsPage"));
 
 export default function App() {
   return (
@@ -77,6 +78,7 @@ export default function App() {
                   <Route path="/assistant" element={<ChatPage />} />
                   <Route path="/knowledge" element={<KnowledgePage />} />
                   <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/docs" element={<DocsPage />} />
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>
               </Suspense>
