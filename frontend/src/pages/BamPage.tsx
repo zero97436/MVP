@@ -50,6 +50,7 @@ export default function BamPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        helpTopic="bam"
         title="Services métier"
         subtitle="Surveillance métier (BAM) — agrège des checks/hôtes avec une règle d'impact"
         actions={editable && (
