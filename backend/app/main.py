@@ -29,6 +29,7 @@ from app.api.routes import (
     migrate,
     public_status,
     reports,
+    roles,
     search,
     sso,
     tenants,
@@ -59,7 +60,7 @@ app.add_middleware(
 )
 
 # Enregistrement des routers sous /api.
-for module in (auth, hosts, checks, dashboard, metrics, users, admin, ai, agent, maintenance, events, discovery, reports, bam, tickets, apm, docker, check_templates, public_status, search, migrate, branding, sso, audit, tenants, ha, knowledge, settings_routes):
+for module in (auth, hosts, checks, dashboard, metrics, users, admin, ai, agent, maintenance, events, discovery, reports, bam, tickets, apm, docker, check_templates, public_status, search, migrate, branding, sso, audit, tenants, ha, knowledge, roles, settings_routes):
     app.include_router(module.router, prefix=settings.API_PREFIX)
 
 
