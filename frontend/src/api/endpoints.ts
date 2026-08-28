@@ -41,6 +41,18 @@ export const createHost = (data: Partial<Host>) => api.post<Host>("/hosts", data
 export const updateHost = (id: number, data: Partial<Host>) =>
   api.put<Host>(`/hosts/${id}`, data);
 export const deleteHost = (id: number) => api.delete(`/hosts/${id}`);
+export interface HostEnrollment {
+  host_id: number;
+  hostname: string;
+  monitoring_mode: string;
+  api_base: string;
+  metrics_url: string;
+  ingest_key_required: boolean;
+  install_command: string;
+  systemd_unit: string;
+}
+export const getHostEnrollment = (id: number) =>
+  api.get<HostEnrollment>(`/hosts/${id}/enrollment`);
 
 // --- Checks ---
 export const listChecks = (hostId?: number) =>
