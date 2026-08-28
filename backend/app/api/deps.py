@@ -1,5 +1,5 @@
 """Dépendances FastAPI partagées (auth)."""
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
@@ -45,9 +45,26 @@ def require_roles(*roles: str):
     return _dep
 
 
-# Raccourcis : admin seul, ou opérateur+admin (actions de modification).
+# Admin seul (inchangé).
 require_admin = require_roles("admin")
-require_operator = require_roles("admin", "operator")
+
+
+def require_operator(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> User:
+    """Action de modification. Admin/operator : autorisés partout (comportement
+    historique). Rôle personnalisé : autorisé uniquement sur les sections où il a
+    le droit d'écriture (dérivée du chemin de la requête). Viewer : refusé."""
+    from app.core.rbac import can_write, section_for_path
+
+    if can_write(db, user, section_for_path(request.url.path)):
+        return user
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Droit de modification insuffisant sur cette section.",
+    )
 
 
 def require_ingest_key(x_ingest_key: str | None = Header(default=None)) -> None:
