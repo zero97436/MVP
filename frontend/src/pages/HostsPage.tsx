@@ -14,7 +14,12 @@ import { ImportPanel } from "../components/ImportPanel";
 import { useAuth } from "../lib/auth";
 import { canEdit } from "../lib/permissions";
 
-const EMPTY = { name: "", hostname_or_ip: "", description: "", environment: "production", parent_host_id: 0, location: "", latitude: "", longitude: "" };
+const EMPTY = { name: "", hostname_or_ip: "", description: "", environment: "production", monitoring_mode: "agentless", ssh_port: "", ssh_user: "", ssh_password: "", parent_host_id: 0, location: "", latitude: "", longitude: "" };
+const MODE_LABEL: Record<string, string> = {
+  agentless: "Agentless (le serveur sonde l'hôte)",
+  agent: "Agent (push HTTPS depuis l'hôte)",
+  ssh: "SSH (tunnel, le serveur se connecte en SSH)",
+};
 
 export default function HostsPage() {
   const [hosts, setHosts] = useState<Host[]>([]);
@@ -45,6 +50,10 @@ export default function HostsPage() {
       hostname_or_ip: h.hostname_or_ip,
       description: h.description ?? "",
       environment: h.environment,
+      monitoring_mode: h.monitoring_mode ?? "agentless",
+      ssh_port: h.ssh_config?.port != null ? String(h.ssh_config.port) : "",
+      ssh_user: (h.ssh_config?.user as string) ?? "",
+      ssh_password: h.ssh_config?.password ? String(h.ssh_config.password) : "",
       parent_host_id: h.parent_host_id ?? 0,
       location: h.location ?? "",
       latitude: h.latitude != null ? String(h.latitude) : "",
@@ -68,8 +77,18 @@ export default function HostsPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const { ssh_port, ssh_user, ssh_password, ...base } = form;
+    const ssh_config =
+      form.monitoring_mode === "ssh"
+        ? {
+            port: ssh_port === "" ? 22 : Number(ssh_port),
+            user: ssh_user,
+            ...(ssh_password ? { password: ssh_password } : {}),
+          }
+        : null;
     const payload = {
-      ...form,
+      ...base,
+      ssh_config,
       parent_host_id: form.parent_host_id || null,
       location: form.location || null,
       latitude: form.latitude === "" ? null : Number(form.latitude),
@@ -157,6 +176,25 @@ export default function HostsPage() {
               <input placeholder="Latitude (ex. 48.8566)" value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} className="input flex-1" />
               <input placeholder="Longitude (ex. 2.3522)" value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} className="input flex-1" />
             </div>
+            <label className="flex flex-col gap-1 text-xs text-ink-faint sm:col-span-2">
+              Mode de supervision
+              <select value={form.monitoring_mode} onChange={(e) => setForm({ ...form, monitoring_mode: e.target.value })} className="input">
+                {Object.entries(MODE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </label>
+            {form.monitoring_mode === "agent" && (
+              <p className="rounded-lg border border-border bg-bg-soft/50 px-3 py-2 text-xs text-ink-faint sm:col-span-2">
+                Après création, ouvrez la fiche de l'hôte : la carte <b>« Superviser cet hôte »</b> fournit la
+                commande d'installation de l'agent (push HTTPS).
+              </p>
+            )}
+            {form.monitoring_mode === "ssh" && (
+              <div className="grid grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-3">
+                <input placeholder="Port SSH (défaut 22)" value={form.ssh_port} onChange={(e) => setForm({ ...form, ssh_port: e.target.value })} className="input" />
+                <input placeholder="Utilisateur SSH" value={form.ssh_user} onChange={(e) => setForm({ ...form, ssh_user: e.target.value })} className="input" autoComplete="off" />
+                <input type="password" placeholder="Mot de passe SSH" value={form.ssh_password} onChange={(e) => setForm({ ...form, ssh_password: e.target.value })} className="input" autoComplete="new-password" />
+              </div>
+            )}
             <label className="flex flex-col gap-1 text-xs text-ink-faint sm:col-span-2">
               Hôte parent (dépendance — si en panne, alertes des enfants supprimées)
               <select value={form.parent_host_id} onChange={(e) => setForm({ ...form, parent_host_id: Number(e.target.value) })} className="input">
