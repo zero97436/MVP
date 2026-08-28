@@ -130,6 +130,7 @@ export default function HostsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        helpTopic="hosts"
         title="Hosts"
         subtitle={license ? (license.max_hosts == null ? `${license.used} hôtes · édition ${license.plan === "community" ? "Community (illimité)" : license.plan}` : `${license.used}/${license.max_hosts} hôtes (plan ${license.plan})`) : `${views.length} hôtes supervisés`}
         actions={
