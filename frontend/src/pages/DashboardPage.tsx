@@ -324,6 +324,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-5">
       <PageHeader
+        helpTopic="dashboard"
         title="Dashboard"
         subtitle="Vue d'ensemble temps réel"
         actions={
