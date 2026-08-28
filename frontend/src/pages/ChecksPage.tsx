@@ -8,6 +8,7 @@ import { Card } from "../components/ui/Card";
 import { StatusBadge } from "../components/ui/StatusBadge";
 import { EmptyState, ErrorState, Loading } from "../components/States";
 import { CHECK_TYPES } from "../lib/format";
+import { CHECK_META, metaFor } from "../lib/checkMeta";
 import { useAuth } from "../lib/auth";
 import { canEdit } from "../lib/permissions";
 
@@ -36,8 +37,16 @@ export default function ChecksPage() {
 
   const openCreate = () => {
     setEditingId(null);
-    setForm(EMPTY);
+    setForm({ ...EMPTY, config_json: metaFor(EMPTY.type).config });
     setShowForm((s) => editingId !== null ? true : !s);
+  };
+
+  // Changer le type : pré-remplit l'exemple de config (sauf si l'utilisateur l'a déjà modifié).
+  const changeType = (type: CheckType) => {
+    setForm((f) => {
+      const wasExample = Object.values(CHECK_META).some((m) => m.config === f.config_json) || f.config_json === "{}" || f.config_json === "";
+      return { ...f, type, config_json: wasExample ? metaFor(type).config : f.config_json };
+    });
   };
 
   const openEdit = (c: Check) => {
@@ -131,29 +140,69 @@ export default function ChecksPage() {
           <p className="mb-3 text-sm font-medium text-ink-soft">
             {editingId !== null ? "Modifier le check" : "Nouveau check"}
           </p>
-          <form onSubmit={submit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <select value={form.host_id} onChange={(e) => setForm({ ...form, host_id: Number(e.target.value) })} className="input" required>
-              <option value="">— Hôte —</option>
-              {hosts.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
-            </select>
-            <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as CheckType })} className="input">
-              {CHECK_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-            <input required placeholder="Nom" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input" />
-            <div className="grid grid-cols-3 gap-2">
-              <input type="number" placeholder="Intervalle (s)" value={form.interval_seconds} onChange={(e) => setForm({ ...form, interval_seconds: Number(e.target.value) })} className="input" title="Intervalle (s)" />
-              <input type="number" placeholder="Warn" value={form.warning_threshold} onChange={(e) => setForm({ ...form, warning_threshold: e.target.value })} className="input" title="Seuil warning" />
-              <input type="number" placeholder="Crit" value={form.critical_threshold} onChange={(e) => setForm({ ...form, critical_threshold: e.target.value })} className="input" title="Seuil critical" />
-            </div>
-            <input type="number" placeholder="Timeout (s)" value={form.timeout_seconds} onChange={(e) => setForm({ ...form, timeout_seconds: Number(e.target.value) })} className="input" title="Timeout (s)" />
-            <label className="flex flex-col gap-1 text-xs text-ink-faint sm:col-span-2">
-              Exécuté par (sonde)
-              <select value={form.executor_host_id} onChange={(e) => setForm({ ...form, executor_host_id: Number(e.target.value) })} className="input" title="Qui exécute ce check">
-                <option value={0}>Serveur central (par défaut)</option>
-                {hosts.map((h) => <option key={h.id} value={h.id}>Agent : {h.name}</option>)}
+          <form onSubmit={submit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft">
+              Hôte à superviser
+              <select value={form.host_id} onChange={(e) => setForm({ ...form, host_id: Number(e.target.value) })} className="input" required>
+                <option value="">— Choisir un hôte —</option>
+                {hosts.map((h) => <option key={h.id} value={h.id}>{h.name} ({h.hostname_or_ip})</option>)}
               </select>
             </label>
-            <textarea placeholder='config_json ex: {"port": 443} ou {"metric":"cpu_percent"}' value={form.config_json} onChange={(e) => setForm({ ...form, config_json: e.target.value })} className="input font-mono sm:col-span-2" rows={2} />
+            <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft">
+              Type de contrôle
+              <select value={form.type} onChange={(e) => changeType(e.target.value as CheckType)} className="input">
+                {CHECK_TYPES.map((t) => <option key={t} value={t}>{metaFor(t).label}</option>)}
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft sm:col-span-2">
+              Nom du check (libre)
+              <input required placeholder={`ex. « ${metaFor(form.type).label} sur mon serveur »`} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input" />
+            </label>
+
+            {/* Aide contextuelle selon le type choisi */}
+            <div className="rounded-lg border border-brand/25 bg-brand/5 p-3 text-xs text-ink-soft sm:col-span-2">
+              <p className="font-medium text-ink">ℹ️ {metaFor(form.type).desc}</p>
+              {metaFor(form.type).thresholds && (
+                <p className="mt-1">Seuils <b>Warn / Crit</b> = {metaFor(form.type).thresholds}.</p>
+              )}
+              {metaFor(form.type).config !== "{}" && (
+                <p className="mt-1">Configuration attendue (déjà pré-remplie ci-dessous) : <code className="rounded bg-bg-soft px-1">{metaFor(form.type).config}</code></p>
+              )}
+            </div>
+
+            <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft sm:col-span-2">
+              Configuration {metaFor(form.type).config === "{}" ? "(aucune requise pour ce type)" : "(remplacez les valeurs vides)"}
+              <textarea value={form.config_json} onChange={(e) => setForm({ ...form, config_json: e.target.value })} className="input font-mono text-xs" rows={metaFor(form.type).config.length > 60 ? 3 : 2} />
+            </label>
+
+            <div className="grid grid-cols-3 gap-2 sm:col-span-2">
+              <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft">
+                Intervalle (secondes)
+                <input type="number" value={form.interval_seconds} onChange={(e) => setForm({ ...form, interval_seconds: Number(e.target.value) })} className="input" />
+              </label>
+              <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft">
+                Seuil avertissement {metaFor(form.type).thresholds ? "" : "(optionnel)"}
+                <input type="number" placeholder="—" value={form.warning_threshold} onChange={(e) => setForm({ ...form, warning_threshold: e.target.value })} className="input" />
+              </label>
+              <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft">
+                Seuil critique {metaFor(form.type).thresholds ? "" : "(optionnel)"}
+                <input type="number" placeholder="—" value={form.critical_threshold} onChange={(e) => setForm({ ...form, critical_threshold: e.target.value })} className="input" />
+              </label>
+            </div>
+
+            <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft">
+              Délai max de réponse (secondes)
+              <input type="number" value={form.timeout_seconds} onChange={(e) => setForm({ ...form, timeout_seconds: Number(e.target.value) })} className="input" />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft">
+              Exécuté par
+              <select value={form.executor_host_id} onChange={(e) => setForm({ ...form, executor_host_id: Number(e.target.value) })} className="input">
+                <option value={0}>Serveur central (par défaut)</option>
+                {hosts.map((h) => <option key={h.id} value={h.id}>Sonde : agent de {h.name}</option>)}
+              </select>
+            </label>
+
             <div className="flex gap-2 sm:col-span-2">
               <button className="btn-primary flex-1">{editingId !== null ? "Enregistrer" : "Créer le check"}</button>
               <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY); }} className="btn-ghost">Annuler</button>
