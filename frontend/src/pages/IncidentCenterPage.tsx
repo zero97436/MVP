@@ -14,10 +14,12 @@ import { MaintenancePanel } from "../components/MaintenancePanel";
 import { cn } from "../lib/cn";
 import { useAuth } from "../lib/auth";
 import { canEdit } from "../lib/permissions";
+import { useI18n } from "../lib/i18n";
 
 const FILTERS: (CheckStatus | "ALL")[] = ["ALL", "CRITICAL", "WARNING", "UNKNOWN"];
 
 export default function IncidentCenterPage() {
+  const { t } = useI18n();
   const { data: incidents, error, loading, refresh } = usePolling(
     () => getIncidents().then((r) => r.data),
     10000,
@@ -75,7 +77,7 @@ export default function IncidentCenterPage() {
     } catch (e: unknown) {
       const detail =
         (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Analyse impossible (IA injoignable ?).";
+        t("inc.analysisFailed");
       setAnalyses((p) => ({ ...p, [id]: { loading: false, error: detail } }));
     }
   };
@@ -87,7 +89,7 @@ export default function IncidentCenterPage() {
       const { data } = await remediateIncident(id, action);
       if (data.command_id) {
         // Action exécutée par l'agent : on suit la commande jusqu'au résultat.
-        setRemediations((p) => ({ ...p, [id]: { text: "⏳ En attente de l'agent…", ok: true } }));
+        setRemediations((p) => ({ ...p, [id]: { text: t("inc.waitingAgent"), ok: true } }));
         pollCommand(id, data.command_id);
       } else {
         setRemediations((p) => ({
@@ -99,7 +101,7 @@ export default function IncidentCenterPage() {
     } catch (e: unknown) {
       const detail =
         (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Action impossible.";
+        t("inc.actionFailed");
       setRemediations((p) => ({ ...p, [id]: { text: detail, ok: false } }));
     }
   };
@@ -114,7 +116,7 @@ export default function IncidentCenterPage() {
           clearInterval(timer);
           setRemediations((p) => ({
             ...p,
-            [incidentId]: { text: data.result ?? "(aucun résultat)", ok: data.status === "done" },
+            [incidentId]: { text: data.result ?? t("inc.noResult"), ok: data.status === "done" },
           }));
         }
       } catch {
@@ -124,7 +126,7 @@ export default function IncidentCenterPage() {
         clearInterval(timer);
         setRemediations((p) => ({
           ...p,
-          [incidentId]: { text: "L'agent n'a pas répondu (hors ligne ?).", ok: false },
+          [incidentId]: { text: t("inc.agentNoReply"), ok: false },
         }));
       }
     }, 3000);
@@ -135,21 +137,21 @@ export default function IncidentCenterPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Incident Center" subtitle="Gestion centralisée des alertes actives" helpTopic="incidents" />
+      <PageHeader titleKey="page.incidents.title" subtitleKey="page.incidents.sub" helpTopic="incidents" />
 
       <MaintenancePanel />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <MetricCard label="Total actifs" value={list.length} icon={BellRing} accent={list.length ? "critical" : "ok"} />
+        <MetricCard label={t("inc.totalActive")} value={list.length} icon={BellRing} accent={list.length ? "critical" : "ok"} />
         <MetricCard label="Critical" value={counts.CRITICAL} icon={BellRing} accent="critical" />
         <MetricCard label="Warning" value={counts.WARNING} icon={BellRing} accent="warning" />
-        <MetricCard label="Acquittés" value={ackedCount} icon={BellRing} accent="info" />
+        <MetricCard label={t("inc.acked")} value={ackedCount} icon={BellRing} accent="info" />
       </div>
 
       <Card className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[200px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher (hôte, check, message)…" className="input w-full pl-9" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("inc.searchPh")} className="input w-full pl-9" />
         </div>
         <div className="flex items-center gap-1 rounded-lg border border-border bg-bg-soft p-1">
           <Filter className="mx-1 h-4 w-4 text-ink-faint" />
@@ -162,14 +164,14 @@ export default function IncidentCenterPage() {
                 filter === f ? "bg-brand text-white" : "text-ink-soft hover:text-ink",
               )}
             >
-              {f === "ALL" ? "Tous" : f}
+              {f === "ALL" ? t("common.all") : f}
             </button>
           ))}
         </div>
       </Card>
 
       {filtered.length === 0 ? (
-        <p className="py-10 text-center text-sm text-status-ok">Aucun incident ne correspond 🎉</p>
+        <p className="py-10 text-center text-sm text-status-ok">{t("inc.noneMatch")}</p>
       ) : (
         <MotionGrid className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {filtered.map((inc) => (
