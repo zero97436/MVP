@@ -48,7 +48,7 @@ export default function TenantsPage() {
   if (businessOnly) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Tenants" subtitle="Multi-tenant MSP" />
+        <PageHeader titleKey="page.tenants.title" subtitleKey="page.tenants.sub" />
         <Card>
           <div className="flex flex-col items-center gap-3 py-14 text-center">
             <Building2 className="h-12 w-12 text-ink-faint" />
@@ -66,7 +66,7 @@ export default function TenantsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Tenants" subtitle="Multi-tenant MSP — clients cloisonnés sur une seule instance" helpTopic="tenants" />
+      <PageHeader titleKey="page.tenants.title" subtitleKey="page.tenants.sub" helpTopic="tenants" />
 
       <Card>
         <SectionTitle title="Créer un tenant (client)" icon={Plus} />
