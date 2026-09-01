@@ -7,6 +7,7 @@ import { uptimeSince, timeAgo } from "../../lib/format";
 import { cn } from "../../lib/cn";
 import { fadeUp } from "./Card";
 import { StatusDot } from "./StatusBadge";
+import { useI18n } from "../../lib/i18n";
 
 interface HostView extends Host {
   status: CheckStatus;
@@ -51,6 +52,7 @@ export function HostCard({
   onDelete?: (id: number) => void;
   onEdit?: (host: HostView) => void;
 }) {
+  const { t } = useI18n();
   const meta = statusMeta(host.status);
   return (
     <motion.div
@@ -74,15 +76,15 @@ export function HostCard({
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-          <Stat label="Env" value={host.environment} />
-          <Stat label="Checks" value={host.checksCount ?? "—"} />
-          <Stat label="Uptime" value={uptimeSince(host.created_at)} />
+          <Stat label={t("common.env")} value={host.environment} />
+          <Stat label={t("common.checks")} value={host.checksCount ?? "—"} />
+          <Stat label={t("common.uptime")} value={uptimeSince(host.created_at)} />
         </div>
 
         <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs text-ink-faint">
           <span className="flex items-center gap-1">
             <Activity className="h-3 w-3" />
-            {host.lastCheckAt ? timeAgo(host.lastCheckAt) : "jamais vérifié"}
+            {host.lastCheckAt ? timeAgo(host.lastCheckAt) : t("common.neverChecked")}
           </span>
           <span className="flex items-center gap-3">
             {onEdit && (
@@ -90,7 +92,7 @@ export function HostCard({
                 onClick={() => onEdit(host)}
                 className="flex items-center gap-1 text-ink-soft hover:text-brand"
               >
-                <Pencil className="h-3 w-3" /> Éditer
+                <Pencil className="h-3 w-3" /> {t("common.edit")}
               </button>
             )}
             {onDelete && (
@@ -98,7 +100,7 @@ export function HostCard({
                 onClick={() => onDelete(host.id)}
                 className="text-status-critical/80 hover:text-status-critical"
               >
-                Supprimer
+                {t("common.delete")}
               </button>
             )}
           </span>
