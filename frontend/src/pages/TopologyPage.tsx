@@ -111,7 +111,7 @@ export default function TopologyPage() {
     nodes.push({
       id: "core",
       position: { x: COL_CORE, y: coreY },
-      data: { label: "🛰️ Opsora" },
+      data: { label: "🛰️ Orbisys" },
       style: nodeStyle("#3B82F6", true),
       sourcePosition: Position.Right,
     });
