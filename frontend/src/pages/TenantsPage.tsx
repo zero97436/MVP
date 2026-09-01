@@ -8,8 +8,10 @@ import type { Host, User } from "../types";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Card, SectionTitle, MotionGrid } from "../components/ui/Card";
 import { Loading } from "../components/States";
+import { useI18n } from "../lib/i18n";
 
 export default function TenantsPage() {
+  const { t: tr } = useI18n();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [hosts, setHosts] = useState<Host[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -32,7 +34,7 @@ export default function TenantsPage() {
     load();
   };
   const remove = async (id: number) => {
-    if (confirm("Supprimer ce tenant ? (ses hôtes et utilisateurs repassent en global)")) {
+    if (confirm(tr("ten.confirmDelete"))) {
       await deleteTenant(id); load();
     }
   };
@@ -52,12 +54,8 @@ export default function TenantsPage() {
         <Card>
           <div className="flex flex-col items-center gap-3 py-14 text-center">
             <Building2 className="h-12 w-12 text-ink-faint" />
-            <p className="text-sm font-medium text-ink">Multi-tenant MSP — plan Business</p>
-            <p className="max-w-md text-xs text-ink-faint">
-              Gérez plusieurs clients cloisonnés sur une seule instance : chaque client
-              ne voit que ses propres équipements, incidents et rapports. Vos équipes MSP
-              gardent la vue globale. Disponible à partir du plan Business.
-            </p>
+            <p className="text-sm font-medium text-ink">{tr("ten.businessTitle")}</p>
+            <p className="max-w-md text-xs text-ink-faint">{tr("ten.businessDesc")}</p>
           </div>
         </Card>
       </div>
@@ -69,10 +67,10 @@ export default function TenantsPage() {
       <PageHeader titleKey="page.tenants.title" subtitleKey="page.tenants.sub" helpTopic="tenants" />
 
       <Card>
-        <SectionTitle title="Créer un tenant (client)" icon={Plus} />
+        <SectionTitle title={tr("ten.createTenant")} icon={Plus} />
         <form onSubmit={create} className="flex gap-2">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom du client (ex. ACME Corp)" className="input flex-1" />
-          <button className="btn-primary">Créer</button>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={tr("ten.namePh")} className="input flex-1" />
+          <button className="btn-primary">{tr("common.create")}</button>
         </form>
       </Card>
 
@@ -90,20 +88,20 @@ export default function TenantsPage() {
               <button onClick={() => remove(t.id)} className="text-status-critical/70 hover:text-status-critical"><Trash2 className="h-4 w-4" /></button>
             </div>
             <div className="mt-3 flex gap-4 text-xs text-ink-soft">
-              <span className="flex items-center gap-1"><Server className="h-3.5 w-3.5" /> {t.hosts} hôte(s)</span>
-              <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {t.users} utilisateur(s)</span>
+              <span className="flex items-center gap-1"><Server className="h-3.5 w-3.5" /> {t.hosts} {tr("ten.hostsCount")}</span>
+              <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {t.users} {tr("ten.usersCount")}</span>
             </div>
           </div>
         ))}
-        {tenants.length === 0 && <p className="text-sm text-ink-faint">Aucun tenant. Créez-en un pour commencer.</p>}
+        {tenants.length === 0 && <p className="text-sm text-ink-faint">{tr("ten.none")}</p>}
       </MotionGrid>
 
       {/* Assignation des hôtes */}
       <Card className="overflow-hidden p-0">
-        <div className="p-5 pb-2"><SectionTitle title="Assignation des hôtes" icon={Server} /></div>
+        <div className="p-5 pb-2"><SectionTitle title={tr("ten.assignHosts")} icon={Server} /></div>
         <table className="w-full text-sm">
           <thead className="border-b border-border bg-bg-soft/50 text-left text-xs uppercase tracking-wide text-ink-faint">
-            <tr><th className="px-4 py-2.5">Hôte</th><th className="px-4 py-2.5">IP</th><th className="px-4 py-2.5">Tenant</th></tr>
+            <tr><th className="px-4 py-2.5">{tr("ten.host")}</th><th className="px-4 py-2.5">IP</th><th className="px-4 py-2.5">{tr("ten.tenant")}</th></tr>
           </thead>
           <tbody>
             {hosts.map((h) => (
@@ -112,7 +110,7 @@ export default function TenantsPage() {
                 <td className="px-4 py-2 text-ink-faint">{h.hostname_or_ip}</td>
                 <td className="px-4 py-2">
                   <select value={h.tenant_id ?? 0} onChange={(e) => setHost(h.id, Number(e.target.value))} className="input py-1 text-xs">
-                    <option value={0}>— Global (non assigné) —</option>
+                    <option value={0}>{tr("ten.globalUnassigned")}</option>
                     {tenants.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 </td>
@@ -124,10 +122,10 @@ export default function TenantsPage() {
 
       {/* Assignation des utilisateurs */}
       <Card className="overflow-hidden p-0">
-        <div className="p-5 pb-2"><SectionTitle title="Rattachement des utilisateurs" icon={Users} /></div>
+        <div className="p-5 pb-2"><SectionTitle title={tr("ten.assignUsers")} icon={Users} /></div>
         <table className="w-full text-sm">
           <thead className="border-b border-border bg-bg-soft/50 text-left text-xs uppercase tracking-wide text-ink-faint">
-            <tr><th className="px-4 py-2.5">Utilisateur</th><th className="px-4 py-2.5">Rôle</th><th className="px-4 py-2.5">Tenant (vide = MSP global)</th></tr>
+            <tr><th className="px-4 py-2.5">{tr("ten.user")}</th><th className="px-4 py-2.5">{tr("ten.role")}</th><th className="px-4 py-2.5">{tr("ten.tenantMsp")}</th></tr>
           </thead>
           <tbody>
             {users.map((u) => (
@@ -136,7 +134,7 @@ export default function TenantsPage() {
                 <td className="px-4 py-2 text-ink-faint">{u.role}</td>
                 <td className="px-4 py-2">
                   <select value={(u as User & { tenant_id?: number }).tenant_id ?? 0} onChange={(e) => setUser(u.id, Number(e.target.value))} className="input py-1 text-xs">
-                    <option value={0}>— MSP global (voit tout) —</option>
+                    <option value={0}>{tr("ten.mspGlobal")}</option>
                     {tenants.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 </td>
