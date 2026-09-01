@@ -68,8 +68,8 @@ export default function KnowledgePage() {
     <div className="space-y-6">
       <PageHeader
         helpTopic="knowledge"
-        title="Connaissances"
-        subtitle="Base de connaissances (RAG) — l'assistant IA s'appuie sur vos runbooks pour répondre"
+        titleKey="page.knowledge.title"
+        subtitleKey="page.knowledge.sub"
         actions={editable && (
           <button onClick={reindex} disabled={busy} className="btn-ghost">
             <RefreshCw className="h-4 w-4" /> Ré-indexer
