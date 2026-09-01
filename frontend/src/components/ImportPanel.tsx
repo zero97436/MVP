@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Upload, Eye, CheckCircle2, AlertTriangle, FileUp } from "lucide-react";
 import { api } from "../api/client";
 import { Card, SectionTitle } from "./ui/Card";
+import { useI18n } from "../lib/i18n";
 
 interface PreviewHost {
   name: string;
@@ -26,6 +27,7 @@ Routeur Paris;192.168.1.1;production;Agence Paris;48.85;2.35;Équipement réseau
 Serveur Paris;192.168.1.10;production;Agence Paris;;;Serveur Linux;Routeur Paris`;
 
 export function ImportPanel({ onImported }: { onImported: () => void }) {
+  const { t: tr } = useI18n();
   const [format, setFormat] = useState<"csv" | "nagios">("csv");
   const [content, setContent] = useState("");
   const [preview, setPreview] = useState<MigrateResult | null>(null);
@@ -47,7 +49,7 @@ export function ImportPanel({ onImported }: { onImported: () => void }) {
         onImported();
       }
     } catch (e: unknown) {
-      setError((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? "Import impossible");
+      setError((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? tr("imp.failed"));
     } finally {
       setBusy(false);
     }
@@ -64,36 +66,34 @@ export function ImportPanel({ onImported }: { onImported: () => void }) {
 
   return (
     <Card>
-      <SectionTitle title="Migration — importer des hôtes" icon={Upload} />
+      <SectionTitle title={tr("imp.title")} icon={Upload} />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <select value={format} onChange={(e) => setFormat(e.target.value as "csv" | "nagios")} className="input">
-          <option value="csv">CSV (universel)</option>
-          <option value="nagios">Fichiers de configuration (.cfg)</option>
+          <option value="csv">{tr("imp.csvUniversal")}</option>
+          <option value="nagios">{tr("imp.cfgFiles")}</option>
         </select>
         <label className="btn-ghost cursor-pointer justify-center">
-          <FileUp className="h-4 w-4" /> Choisir un fichier…
+          <FileUp className="h-4 w-4" /> {tr("imp.chooseFile")}
           <input type="file" accept=".csv,.cfg,.txt" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
         </label>
         <button onClick={() => setContent(CSV_EXAMPLE)} className="btn-ghost text-xs" type="button">
-          Exemple CSV
+          {tr("imp.csvExample")}
         </button>
       </div>
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         rows={7}
-        placeholder={format === "csv"
-          ? "Colle ton CSV ici (colonnes : name, ip, environment, site, latitude, longitude, template, parent)"
-          : "Colle le contenu de tes fichiers de configuration .cfg (hosts + services concaténés)"}
+        placeholder={format === "csv" ? tr("imp.csvPh") : tr("imp.cfgPh")}
         className="input mt-3 w-full font-mono text-xs"
       />
       <div className="mt-3 flex items-center gap-2">
         <button onClick={() => run(true)} disabled={busy || !content.trim()} className="btn-ghost disabled:opacity-40">
-          <Eye className="h-4 w-4" /> Prévisualiser
+          <Eye className="h-4 w-4" /> {tr("imp.preview")}
         </button>
         <button onClick={() => run(false)} disabled={busy || !preview} className="btn-primary disabled:opacity-40"
-                title={!preview ? "Prévisualise d'abord" : "Créer les hôtes"}>
-          <Upload className="h-4 w-4" /> Importer {preview?.hosts ? `(${preview.hosts.length} hôtes)` : ""}
+                title={!preview ? tr("imp.previewFirst") : tr("imp.createHosts")}>
+          <Upload className="h-4 w-4" /> {tr("imp.import")} {preview?.hosts ? `(${preview.hosts.length} ${tr("imp.hostsWord")})` : ""}
         </button>
       </div>
 
@@ -105,9 +105,9 @@ export function ImportPanel({ onImported }: { onImported: () => void }) {
           <table className="w-full text-xs">
             <thead className="bg-bg-soft/60 text-left uppercase tracking-wide text-ink-faint">
               <tr>
-                <th className="px-3 py-2">Hôte</th><th className="px-3 py-2">IP</th>
-                <th className="px-3 py-2">Site</th><th className="px-3 py-2">Template</th>
-                <th className="px-3 py-2">Parent</th><th className="px-3 py-2">Checks</th>
+                <th className="px-3 py-2">{tr("ten.host")}</th><th className="px-3 py-2">IP</th>
+                <th className="px-3 py-2">{tr("imp.site")}</th><th className="px-3 py-2">Template</th>
+                <th className="px-3 py-2">{tr("imp.parent")}</th><th className="px-3 py-2">Checks</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -130,8 +130,8 @@ export function ImportPanel({ onImported }: { onImported: () => void }) {
       {result && (
         <p className="mt-3 flex items-center gap-1.5 text-sm text-status-ok">
           <CheckCircle2 className="h-4 w-4" />
-          {result.created?.length ?? 0} hôte(s) créé(s), {result.checks_created ?? 0} check(s)
-          {result.skipped?.length ? ` · ${result.skipped.length} déjà présent(s), ignoré(s)` : ""}
+          {result.created?.length ?? 0} {tr("imp.hostsCreated")} {result.checks_created ?? 0} {tr("imp.checksWord")}
+          {result.skipped?.length ? ` · ${result.skipped.length} ${tr("imp.alreadyPresent")}` : ""}
         </p>
       )}
 
