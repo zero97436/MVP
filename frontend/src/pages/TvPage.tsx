@@ -11,10 +11,12 @@ import { statusMeta } from "../lib/status";
 import { useNow } from "../hooks/useNow";
 import { timeAgo } from "../lib/format";
 import { cn } from "../lib/cn";
+import { useI18n } from "../lib/i18n";
 
 const SEV: Record<CheckStatus, number> = { CRITICAL: 0, WARNING: 1, UNKNOWN: 2, OK: 3 };
 
 export default function TvPage() {
+  const { t } = useI18n();
   const { branding } = useBranding();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -76,14 +78,14 @@ export default function TvPage() {
         <div className="flex items-center gap-6">
           <span className={cn("h-6 w-6 rounded-full", overall !== "OK" && "animate-pulse")} style={{ background: meta.color }} />
           <span className="text-5xl font-black" style={{ color: meta.color }}>
-            {overall === "OK" ? "TOUT EST OPÉRATIONNEL"
-              : overall === "CRITICAL" ? `${c.CRITICAL} CRITIQUE(S)`
-              : overall === "WARNING" ? `${c.WARNING} AVERTISSEMENT(S)`
-              : "EN ATTENTE DE DONNÉES"}
+            {overall === "OK" ? t("tv.allOk")
+              : overall === "CRITICAL" ? `${c.CRITICAL} ${t("tv.critical")}`
+              : overall === "WARNING" ? `${c.WARNING} ${t("tv.warning")}`
+              : t("tv.waiting")}
           </span>
         </div>
         <div className="flex gap-10 text-center">
-          <TvStat label="Hôtes" value={summary.hosts_total} />
+          <TvStat label={t("tv.hosts")} value={summary.hosts_total} />
           <TvStat label="Checks" value={summary.checks_total} />
           <TvStat label="Incidents" value={incidents.length} color={incidents.length ? "#EF4444" : "#10B981"} />
         </div>
@@ -92,11 +94,11 @@ export default function TvPage() {
       <div className="grid flex-1 grid-cols-1 gap-6 xl:grid-cols-2">
         {/* Incidents */}
         <div className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-widest text-ink-faint">Incidents actifs</p>
+          <p className="text-sm font-semibold uppercase tracking-widest text-ink-faint">{t("tv.activeIncidents")}</p>
           {sorted.length === 0 ? (
             <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-2xl border border-border">
               <CheckCircle2 className="h-14 w-14 text-status-ok" />
-              <p className="text-xl font-semibold text-status-ok">Aucun incident</p>
+              <p className="text-xl font-semibold text-status-ok">{t("tv.noIncident")}</p>
             </div>
           ) : (
             sorted.slice(0, 6).map((inc) => {
@@ -120,7 +122,7 @@ export default function TvPage() {
 
         {/* Flotte */}
         <div className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-widest text-ink-faint">Flotte — {views.length} hôtes</p>
+          <p className="text-sm font-semibold uppercase tracking-widest text-ink-faint">{t("tv.fleet")} — {views.length} {t("tv.hostsWord")}</p>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
             {views.slice(0, 12).map((v) => {
               const m = statusMeta(v.status);
@@ -131,7 +133,7 @@ export default function TvPage() {
                     <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", v.status !== "OK" && "animate-pulse")} style={{ background: m.color }} />
                     <p className="truncate font-semibold">{v.name}</p>
                   </div>
-                  <p className="mt-1 text-xs" style={{ color: m.color }}>{m.label} · {v.checksCount} check(s)</p>
+                  <p className="mt-1 text-xs" style={{ color: m.color }}>{t(`status.`)} · {v.checksCount} {t("tv.checksN")}</p>
                 </div>
               );
             })}
@@ -139,7 +141,7 @@ export default function TvPage() {
         </div>
       </div>
 
-      <p className="text-center text-xs text-ink-faint">Mode TV · actualisation 15 s</p>
+      <p className="text-center text-xs text-ink-faint">{t("tv.footer")}</p>
     </div>
   );
 }
