@@ -7,7 +7,7 @@ Flux :
   1. GET /auth/sso/login    -> redirige vers le fournisseur (state signé, 10 min)
   2. le fournisseur renvoie -> GET /auth/sso/callback?code&state
   3. échange code -> token, lecture de l'e-mail via userinfo
-  4. compte trouvé/créé     -> JWT Opsora -> redirection /login?sso_token=…
+  4. compte trouvé/créé     -> JWT Orbisys -> redirection /login?sso_token=…
 
 Sécurité : state = JWT signé (anti-CSRF, expirant) ; l'e-mail vient du endpoint
 userinfo du fournisseur (TLS) ; comptes créés avec le rôle SSO_DEFAULT_ROLE.
