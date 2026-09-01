@@ -60,8 +60,8 @@ export default function ContainersPage() {
     <div className="space-y-6">
       <PageHeader
         helpTopic="containers"
-        title="Conteneurs"
-        subtitle="Supervision Docker — état et ressources des conteneurs de l'hôte"
+        titleKey="page.containers.title"
+        subtitleKey="page.containers.sub"
         actions={
           <button onClick={refresh} className="btn-ghost" disabled={refreshing}>
             <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} /> Actualiser
