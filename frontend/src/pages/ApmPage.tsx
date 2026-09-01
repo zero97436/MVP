@@ -8,15 +8,17 @@ import { MetricArea } from "../components/charts/MetricArea";
 import { EmptyState, Loading } from "../components/States";
 import { timeAgo } from "../lib/format";
 import { cn } from "../lib/cn";
+import { useI18n, translate, type Lang } from "../lib/i18n";
 
-function health(app: ApmApp): { color: string; label: string } {
-  if (app.requests === 0) return { color: "#64748B", label: "Silencieux" };
-  if (app.error_rate >= 10) return { color: "#EF4444", label: "Dégradé" };
-  if (app.error_rate >= 5 || (app.latency_ms ?? 0) >= 1000) return { color: "#F59E0B", label: "À surveiller" };
-  return { color: "#10B981", label: "Sain" };
+function health(app: ApmApp, lang: Lang): { color: string; label: string } {
+  if (app.requests === 0) return { color: "#64748B", label: translate(lang, "apm.silent") };
+  if (app.error_rate >= 10) return { color: "#EF4444", label: translate(lang, "apm.degraded") };
+  if (app.error_rate >= 5 || (app.latency_ms ?? 0) >= 1000) return { color: "#F59E0B", label: translate(lang, "apm.watch") };
+  return { color: "#10B981", label: translate(lang, "apm.healthy") };
 }
 
 export default function ApmPage() {
+  const { t, lang } = useI18n();
   const [apps, setApps] = useState<ApmApp[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [series, setSeries] = useState<ApmPoint[]>([]);
@@ -74,7 +76,7 @@ export default function ApmPage() {
 
       {apps.length === 0 ? (
         <Card>
-          <EmptyState message="Aucune application instrumentée." />
+          <EmptyState message={t("apm.empty")} />
           <div className="mx-auto max-w-2xl pb-4 text-xs text-ink-faint">
             <p className="mb-2">Envoyez des métriques depuis vos applications (toutes les 30-60 s) :</p>
             <pre className="overflow-x-auto rounded-lg border border-border bg-bg-soft p-3">
@@ -89,7 +91,7 @@ export default function ApmPage() {
           {/* Cartes applications */}
           <MotionGrid className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {apps.map((a) => {
-              const h = health(a);
+              const h = health(a, lang);
               const active = a.app_name === selected;
               return (
                 <motion.button
@@ -111,9 +113,9 @@ export default function ApmPage() {
                     </span>
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                    <Kpi label="req/min" value={a.rpm} color="#3B82F6" />
-                    <Kpi label="erreurs" value={`${a.error_rate}%`} color={a.error_rate >= 5 ? "#EF4444" : "#10B981"} />
-                    <Kpi label="latence" value={a.latency_ms != null ? `${a.latency_ms} ms` : "—"} color={(a.latency_ms ?? 0) >= 1000 ? "#F59E0B" : "#8B5CF6"} />
+                    <Kpi label={t("apm.reqMin")} value={a.rpm} color="#3B82F6" />
+                    <Kpi label={t("apm.errors")} value={`${a.error_rate}%`} color={a.error_rate >= 5 ? "#EF4444" : "#10B981"} />
+                    <Kpi label={t("apm.latency")} value={a.latency_ms != null ? `${a.latency_ms} ms` : "—"} color={(a.latency_ms ?? 0) >= 1000 ? "#F59E0B" : "#8B5CF6"} />
                   </div>
                   {a.last_seen && (
                     <p className="mt-2 text-right text-[11px] text-ink-faint">vu {timeAgo(a.last_seen)}</p>
@@ -131,11 +133,11 @@ export default function ApmPage() {
                 <MetricArea id="apm-rpm" data={chart.rpm} color="#3B82F6" unit="" height={190} />
               </Card>
               <Card>
-                <SectionTitle title="Taux d'erreur (%)" icon={AlertTriangle} />
+                <SectionTitle title={t("apm.errorRate")} icon={AlertTriangle} />
                 <MetricArea id="apm-err" data={chart.err} color="#EF4444" unit="%" height={190} domain={[0, 100]} />
               </Card>
               <Card>
-                <SectionTitle title="Latence (ms)" icon={Timer} />
+                <SectionTitle title={t("apm.latencyMs")} icon={Timer} />
                 <MetricArea id="apm-lat" data={chart.lat} color="#8B5CF6" unit="" height={190} />
               </Card>
             </div>
