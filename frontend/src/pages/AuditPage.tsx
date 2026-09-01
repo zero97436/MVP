@@ -6,12 +6,14 @@ import { Card } from "../components/ui/Card";
 import { Loading } from "../components/States";
 import { timeAgo } from "../lib/format";
 import { cn } from "../lib/cn";
+import { useI18n } from "../lib/i18n";
 
 const METHOD_COLOR: Record<string, string> = {
   POST: "#10B981", PUT: "#F59E0B", PATCH: "#F59E0B", DELETE: "#EF4444",
 };
 
 export default function AuditPage() {
+  const { t } = useI18n();
   const [rows, setRows] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [enterpriseOnly, setEnterpriseOnly] = useState(false);
@@ -45,7 +47,7 @@ export default function AuditPage() {
         subtitleKey="page.audit.sub"
         actions={
           <button onClick={refresh} disabled={refreshing} className="btn-ghost">
-            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} /> Actualiser
+            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} /> {t("aud.refresh")}
           </button>
         }
       />
@@ -54,12 +56,8 @@ export default function AuditPage() {
         <Card>
           <div className="flex flex-col items-center gap-3 py-14 text-center">
             <ShieldCheck className="h-12 w-12 text-ink-faint" />
-            <p className="text-sm font-medium text-ink">Journal d'audit — plan Enterprise</p>
-            <p className="max-w-md text-xs text-ink-faint">
-              Traçabilité complète des actions (conformité, forensique) : chaque création,
-              modification, suppression et connexion est enregistrée avec l'utilisateur,
-              l'adresse IP et l'horodatage. Disponible avec une licence Enterprise.
-            </p>
+            <p className="text-sm font-medium text-ink">{t("aud.entTitle")}</p>
+            <p className="max-w-md text-xs text-ink-faint">{t("aud.entDesc")}</p>
           </div>
         </Card>
       ) : (
@@ -68,22 +66,22 @@ export default function AuditPage() {
             <div className="relative min-w-[180px] flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
               <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()}
-                     placeholder="Filtrer par chemin (ex. tickets)…" className="input w-full pl-9" />
+                     placeholder={t("aud.filterPath")} className="input w-full pl-9" />
             </div>
             <input value={user} onChange={(e) => setUser(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()}
-                   placeholder="Filtrer par utilisateur…" className="input min-w-[180px]" />
-            <button onClick={load} className="btn-primary">Filtrer</button>
+                   placeholder={t("aud.filterUser")} className="input min-w-[180px]" />
+            <button onClick={load} className="btn-primary">{t("aud.filter")}</button>
           </Card>
 
           <Card className="overflow-hidden p-0">
             <table className="w-full text-xs">
               <thead className="border-b border-border bg-bg-soft/60 text-left uppercase tracking-wide text-ink-faint">
                 <tr>
-                  <th className="px-4 py-2.5">Quand</th>
-                  <th className="px-4 py-2.5">Utilisateur</th>
-                  <th className="px-4 py-2.5">Action</th>
-                  <th className="px-4 py-2.5">Requête</th>
-                  <th className="px-4 py-2.5">Code</th>
+                  <th className="px-4 py-2.5">{t("aud.when")}</th>
+                  <th className="px-4 py-2.5">{t("aud.user")}</th>
+                  <th className="px-4 py-2.5">{t("aud.action")}</th>
+                  <th className="px-4 py-2.5">{t("aud.request")}</th>
+                  <th className="px-4 py-2.5">{t("aud.code")}</th>
                   <th className="px-4 py-2.5">IP</th>
                 </tr>
               </thead>
@@ -93,7 +91,7 @@ export default function AuditPage() {
                     <td className="whitespace-nowrap px-4 py-2 text-ink-faint" title={r.created_at ?? ""}>
                       {r.created_at ? timeAgo(r.created_at) : "—"}
                     </td>
-                    <td className="px-4 py-2 font-medium text-ink">{r.user_email ?? "anonyme"}</td>
+                    <td className="px-4 py-2 font-medium text-ink">{r.user_email ?? t("aud.anonymous")}</td>
                     <td className="px-4 py-2"><code className="rounded bg-bg-soft px-1.5 py-0.5 text-brand">{r.action}</code></td>
                     <td className="max-w-[260px] truncate px-4 py-2 text-ink-soft">
                       <span className="mr-1.5 font-semibold" style={{ color: METHOD_COLOR[r.method] ?? "#64748B" }}>{r.method}</span>
@@ -109,7 +107,7 @@ export default function AuditPage() {
                   </tr>
                 ))}
                 {rows.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-ink-faint">Aucune entrée d'audit.</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-ink-faint">{t("aud.noEntry")}</td></tr>
                 )}
               </tbody>
             </table>
