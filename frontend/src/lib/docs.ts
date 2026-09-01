@@ -39,9 +39,9 @@ const SECTIONS: DocSectionI18n[] = [
     summary: { fr: "Équipements et serveurs supervisés, et leur mode de supervision.", en: "Monitored devices and servers, and their supervision mode." },
     body: [
       { fr: "Un hôte représente une machine ou un équipement (serveur, switch, routeur, sonde…). Créez-le avec son nom, son IP/hostname et son environnement.", en: "A host represents a machine or a device (server, switch, router, probe…). Create it with its name, IP/hostname and environment." },
-      { fr: "Le champ « Mode de supervision » détermine comment Opsora collecte l'état de l'hôte :", en: "The “Supervision mode” field determines how Opsora collects the host's state:" },
+      { fr: "Le champ « Mode de supervision » détermine comment Orbisys collecte l'état de l'hôte :", en: "The “Supervision mode” field determines how Orbisys collects the host's state:" },
       { fr: "• Agentless — le serveur sonde directement l'hôte sur le réseau (ICMP, SNMP, HTTP, TCP…). C'est le mode par défaut, sans rien à installer.", en: "• Agentless — the server probes the host directly over the network (ICMP, SNMP, HTTP, TCP…). This is the default mode, with nothing to install." },
-      { fr: "• Agent (push HTTPS) — un agent léger installé sur l'hôte pousse ses métriques et résultats vers Opsora. Après création, la fiche de l'hôte affiche la commande d'installation prête à copier.", en: "• Agent (HTTPS push) — a lightweight agent installed on the host pushes its metrics and results to Opsora. After creation, the host page shows a ready-to-copy install command." },
+      { fr: "• Agent (push HTTPS) — un agent léger installé sur l'hôte pousse ses métriques et résultats vers Orbisys. Après création, la fiche de l'hôte affiche la commande d'installation prête à copier.", en: "• Agent (HTTPS push) — a lightweight agent installed on the host pushes its metrics and results to Orbisys. After creation, the host page shows a ready-to-copy install command." },
       { fr: "• SSH (tunnel) — le serveur se connecte en SSH pour exécuter les checks. Renseignez le port, l'utilisateur et le mot de passe : les checks de l'hôte réutilisent automatiquement ces identifiants.", en: "• SSH (tunnel) — the server connects over SSH to run the checks. Provide the port, user and password: the host's checks automatically reuse these credentials." },
       { fr: "La dépendance « hôte parent » permet de supprimer les fausses alertes : si un switch amont tombe, les hôtes situés derrière sont marqués injoignables plutôt qu'en panne.", en: "The “parent host” dependency suppresses false alerts: if an upstream switch goes down, the hosts behind it are marked unreachable rather than down." },
     ],
@@ -102,7 +102,7 @@ const SECTIONS: DocSectionI18n[] = [
     summary: { fr: "Supervision applicative : requêtes, erreurs, latence.", en: "Application monitoring: requests, errors, latency." },
     body: [
       { fr: "L'APM suit la santé des applications instrumentées : débit de requêtes, taux d'erreurs et latence moyenne.", en: "APM tracks the health of instrumented applications: request throughput, error rate and average latency." },
-      { fr: "Opsora s'auto-supervise et apparaît comme une première application ; ajoutez les vôtres via l'endpoint d'ingestion APM.", en: "Opsora self-monitors and appears as a first application; add your own via the APM ingestion endpoint." },
+      { fr: "Orbisys s'auto-supervise et apparaît comme une première application ; ajoutez les vôtres via l'endpoint d'ingestion APM.", en: "Orbisys self-monitors and appears as a first application; add your own via the APM ingestion endpoint." },
     ],
   },
   {
@@ -142,7 +142,7 @@ const SECTIONS: DocSectionI18n[] = [
   {
     id: "notifications",
     title: { fr: "Canaux de notification", en: "Notification channels" },
-    summary: { fr: "Où et comment Opsora prévient en cas d'alerte.", en: "Where and how Opsora warns when an alert fires." },
+    summary: { fr: "Où et comment Orbisys prévient en cas d'alerte.", en: "Where and how Orbisys warns when an alert fires." },
     body: [
       { fr: "Configurez les canaux de sortie (e-mail, webhook, Slack, Telegram, Teams, Discord, SMS, script) dans Settings. Chaque canal peut être limité à l'escalade ou à des plages horaires.", en: "Configure the output channels (email, webhook, Slack, Telegram, Teams, Discord, SMS, script) in Settings. Each channel can be limited to escalation or to time windows." },
       { fr: "Testez un canal après création pour valider la configuration.", en: "Test a channel after creation to validate the configuration." },
