@@ -15,10 +15,12 @@ import { availabilityBuckets, availabilityRatio, responseTimeSeries } from "../l
 import { formatDate, formatMs, formatPercent } from "../lib/format";
 import { useAuth } from "../lib/auth";
 import { canEdit } from "../lib/permissions";
+import { useI18n } from "../lib/i18n";
 
 const DAY = 24 * 3600 * 1000;
 
 export default function CheckDetailPage() {
+  const { t } = useI18n();
   const { id } = useParams();
   const checkId = Number(id);
   const [check, setCheck] = useState<Check | null>(null);
@@ -41,7 +43,7 @@ export default function CheckDetailPage() {
         setResults(r.data);
         setHasMore(r.data.length === PAGE);
       })
-      .catch(() => setError("Check introuvable"))
+      .catch(() => setError(t("cd.notFound")))
       .finally(() => setLoading(false));
   };
   useEffect(load, [checkId]);
@@ -97,7 +99,7 @@ export default function CheckDetailPage() {
   }, [results, activePerfKey]);
 
   if (loading) return <Loading />;
-  if (error || !check) return <ErrorState message={error ?? "Erreur"} />;
+  if (error || !check) return <ErrorState message={error ?? t("common.loadError")} />;
 
   return (
     <div className="space-y-6">
@@ -107,33 +109,33 @@ export default function CheckDetailPage() {
       <PageHeader
         helpTopic="checks"
         title={check.name}
-        subtitle={`${check.type} · intervalle ${check.interval_seconds}s · timeout ${check.timeout_seconds}s`}
+        subtitle={`${check.type} · ${t("cd.interval")} ${check.interval_seconds}s · timeout ${check.timeout_seconds}s`}
         actions={
           editable && (
             <button onClick={run} disabled={running} className="btn-primary">
-              <Play className="h-4 w-4" /> {running ? "Exécution..." : "Exécuter"}
+              <Play className="h-4 w-4" /> {running ? t("cd.running") : t("cd.run")}
             </button>
           )
         }
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <MetricCard label="Statut actuel" value={check.last_status ?? "UNKNOWN"} icon={Gauge}
+        <MetricCard label={t("cd.currentStatus")} value={check.last_status ?? "UNKNOWN"} icon={Gauge}
           accent={check.last_status === "OK" ? "ok" : check.last_status === "WARNING" ? "warning" : check.last_status === "CRITICAL" ? "critical" : "unknown"} />
-        <MetricCard label="Disponibilité" value={formatPercent(avail, 1)} icon={Gauge} accent={avail >= 99 ? "ok" : avail >= 95 ? "warning" : "critical"} />
-        <MetricCard label="Temps moyen" value={formatMs(avgMs)} icon={Timer} accent="info" />
-        <MetricCard label="Résultats" value={results.length} icon={History} accent="neutral" />
+        <MetricCard label={t("cd.availability")} value={formatPercent(avail, 1)} icon={Gauge} accent={avail >= 99 ? "ok" : avail >= 95 ? "warning" : "critical"} />
+        <MetricCard label={t("cd.avgTime")} value={formatMs(avgMs)} icon={Timer} accent="info" />
+        <MetricCard label={t("cd.results")} value={results.length} icon={History} accent="neutral" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
-          <SectionTitle title="Disponibilité — 24 h" icon={Gauge} />
+          <SectionTitle title={t("cd.avail24")} icon={Gauge} />
           <AvailabilityChart data={avail24h} />
         </Card>
         <Card>
-          <SectionTitle title="Temps de réponse" icon={Timer} />
+          <SectionTitle title={t("cd.responseTime")} icon={Timer} />
           {rt.length ? <ResponseTimeChart data={rt} /> : (
-            <p className="flex h-[220px] items-center justify-center text-sm text-ink-faint">Aucune mesure de durée disponible.</p>
+            <p className="flex h-[220px] items-center justify-center text-sm text-ink-faint">{t("cd.noDuration")}</p>
           )}
         </Card>
       </div>
@@ -158,19 +160,19 @@ export default function CheckDetailPage() {
       )}
 
       <Card className="overflow-hidden p-0">
-        <div className="p-5 pb-0"><SectionTitle title="Historique des résultats" icon={History} /></div>
+        <div className="p-5 pb-0"><SectionTitle title={t("cd.history")} icon={History} /></div>
         {results.length === 0 ? (
-          <div className="p-5"><EmptyState message="Aucun résultat encore." /></div>
+          <div className="p-5"><EmptyState message={t("cd.noResult")} /></div>
         ) : (
           <>
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-bg-soft/50 text-left text-xs uppercase tracking-wide text-ink-faint">
               <tr>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Statut</th>
-                <th className="px-4 py-3">Valeur</th>
-                <th className="px-4 py-3">Message</th>
-                <th className="px-4 py-3">Durée</th>
+                <th className="px-4 py-3">{t("cd.date")}</th>
+                <th className="px-4 py-3">{t("cd.status")}</th>
+                <th className="px-4 py-3">{t("cd.value")}</th>
+                <th className="px-4 py-3">{t("cd.message")}</th>
+                <th className="px-4 py-3">{t("cd.duration")}</th>
               </tr>
             </thead>
             <tbody>
@@ -188,7 +190,7 @@ export default function CheckDetailPage() {
           {hasMore && (
             <button onClick={loadMore} disabled={loadingMore}
               className="flex w-full items-center justify-center gap-2 border-t border-border py-3 text-sm text-ink-soft hover:text-ink">
-              {loadingMore ? "Chargement…" : "Charger plus"}
+              {loadingMore ? t("cd.loadingMore") : t("cd.loadMore")}
             </button>
           )}
           </>
