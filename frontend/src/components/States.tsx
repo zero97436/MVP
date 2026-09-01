@@ -1,10 +1,12 @@
 import { AlertOctagon, Inbox, Loader2 } from "lucide-react";
+import { useI18n } from "../lib/i18n";
 
-export function Loading({ label = "Chargement..." }: { label?: string }) {
+export function Loading({ label }: { label?: string }) {
+  const { t } = useI18n();
   return (
     <div className="flex items-center justify-center gap-2 py-16 text-ink-faint">
       <Loader2 className="h-5 w-5 animate-spin" />
-      <span>{label}</span>
+      <span>{label ?? t("common.loading")}</span>
     </div>
   );
 }
