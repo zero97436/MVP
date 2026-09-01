@@ -36,7 +36,7 @@ export default function MonitoringPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Live Monitoring" subtitle="Flux d'événements et état de la flotte en temps réel" />
+      <PageHeader titleKey="page.monitoring.title" subtitleKey="page.monitoring.sub" />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card><LiveEventFeed height={420} /></Card>
