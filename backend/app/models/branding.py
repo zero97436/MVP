@@ -7,7 +7,7 @@ from app.db.base import Base, TimestampMixin
 class Branding(Base, TimestampMixin):
     """Personnalisation de marque (plan Professional) — une seule ligne (id=1).
 
-    logo_url : URL http(s) ou data-URL (image encodée) ; vide = logo Opsora.
+    logo_url : URL http(s) ou data-URL (image encodée) ; vide = logo Orbisys.
     """
 
     __tablename__ = "branding"
