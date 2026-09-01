@@ -6,8 +6,10 @@ import { Card, SectionTitle, MotionGrid } from "../components/ui/Card";
 import { Loading } from "../components/States";
 import { useAuth } from "../lib/auth";
 import { canEdit } from "../lib/permissions";
+import { useI18n } from "../lib/i18n";
 
 export default function KnowledgePage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const editable = canEdit(user);
   const [docs, setDocs] = useState<KnowledgeDoc[]>([]);
@@ -29,13 +31,13 @@ export default function KnowledgePage() {
       load();
     } finally { setBusy(false); }
   };
-  const remove = async (id: number) => { if (confirm("Supprimer ce document ?")) { await deleteKnowledge(id); load(); } };
+  const remove = async (id: number) => { if (confirm(t("kn.confirmDelete"))) { await deleteKnowledge(id); load(); } };
 
   const [bulk, setBulk] = useState("");
   const importMarkdown = async () => {
     if (!bulk.trim()) return;
     setBusy(true);
-    try { const { data } = await importKnowledge({ markdown: bulk }); setMsg(`${data.imported} document(s) importé(s).`); setBulk(""); load(); }
+    try { const { data } = await importKnowledge({ markdown: bulk }); setMsg(`${data.imported} ${t("kn.imported")}`); setBulk(""); load(); }
     finally { setBusy(false); }
   };
   const onFiles = async (files: FileList | null) => {
@@ -46,18 +48,18 @@ export default function KnowledgePage() {
         Array.from(files).map(async (f) => ({ title: f.name.replace(/\.[^.]+$/, ""), content: await f.text(), source: f.name })),
       );
       const { data } = await importKnowledge({ documents });
-      setMsg(`${data.imported} document(s) importé(s) depuis ${files.length} fichier(s).`);
+      setMsg(`${data.imported} ${t("kn.importedFrom")} ${files.length} ${t("kn.files")}`);
       load();
     } finally { setBusy(false); }
   };
   const loadStarter = async () => {
     setBusy(true);
-    try { const { data } = await importStarterPack(); setMsg(`${data.imported} problème(s) courant(s) ajouté(s) (Windows, Office, réseau…).`); load(); }
+    try { const { data } = await importStarterPack(); setMsg(`${data.imported} ${t("kn.starterAdded")}`); load(); }
     finally { setBusy(false); }
   };
   const reindex = async () => {
     setBusy(true);
-    try { const { data } = await reindexKnowledge(); setMsg(`${data.embedded} document(s) ré-indexé(s) sémantiquement.`); load(); }
+    try { const { data } = await reindexKnowledge(); setMsg(`${data.embedded} ${t("kn.reindexed")}`); load(); }
     finally { setBusy(false); }
   };
 
@@ -72,7 +74,7 @@ export default function KnowledgePage() {
         subtitleKey="page.knowledge.sub"
         actions={editable && (
           <button onClick={reindex} disabled={busy} className="btn-ghost">
-            <RefreshCw className="h-4 w-4" /> Ré-indexer
+            <RefreshCw className="h-4 w-4" /> {t("kn.reindex")}
           </button>
         )}
       />
@@ -80,11 +82,9 @@ export default function KnowledgePage() {
       <div className="card flex items-center gap-3 p-4">
         <span className="grid h-10 w-10 place-items-center rounded-lg bg-brand/15 text-brand"><Sparkles className="h-5 w-5" /></span>
         <div className="flex-1 text-sm">
-          <p className="text-ink">{docs.length} document(s) · <b>{embedded}</b> indexé(s) sémantiquement</p>
+          <p className="text-ink">{docs.length} {t("kn.docsIndexed")} <b>{embedded}</b> {t("kn.semanticIndexed")}</p>
           <p className="text-xs text-ink-faint">
-            {embedded < docs.length
-              ? "Recherche par mots-clés active. Pour la recherche sémantique : ollama pull nomic-embed-text, puis « Ré-indexer »."
-              : "Recherche sémantique active (embeddings Ollama)."}
+            {embedded < docs.length ? t("kn.keywordActive") : t("kn.semanticActive")}
           </p>
         </div>
       </div>
@@ -93,39 +93,37 @@ export default function KnowledgePage() {
       {/* Import en masse */}
       {editable && (
         <Card>
-          <SectionTitle title="Importer en masse" icon={Upload} />
+          <SectionTitle title={t("kn.bulkImport")} icon={Upload} />
           <div className="flex flex-wrap items-center gap-2">
             <label className="btn-ghost cursor-pointer">
-              <FileUp className="h-4 w-4" /> Importer des fichiers (.md, .txt)
+              <FileUp className="h-4 w-4" /> {t("kn.importFiles")}
               <input type="file" accept=".md,.txt,.markdown" multiple className="hidden" onChange={(e) => onFiles(e.target.files)} />
             </label>
             <button onClick={loadStarter} disabled={busy} className="btn-ghost">
-              <PackagePlus className="h-4 w-4" /> Charger le pack de démarrage (Windows, Office, réseau…)
+              <PackagePlus className="h-4 w-4" /> {t("kn.loadStarter")}
             </button>
           </div>
-          <p className="mt-3 mb-1 text-xs text-ink-faint">
-            …ou collez un gros document Markdown (il sera découpé en fiches sur chaque titre <code className="rounded bg-bg-soft px-1"># / ##</code>) :
-          </p>
+          <p className="mt-3 mb-1 text-xs text-ink-faint">{t("kn.pasteHint")}</p>
           <textarea value={bulk} onChange={(e) => setBulk(e.target.value)} rows={4}
                     placeholder={"## Problème A\nSolution A…\n\n## Problème B\nSolution B…"}
                     className="input w-full font-mono text-xs" />
-          <button onClick={importMarkdown} disabled={busy || !bulk.trim()} className="btn-primary mt-2">Importer le document</button>
+          <button onClick={importMarkdown} disabled={busy || !bulk.trim()} className="btn-primary mt-2">{t("kn.importDoc")}</button>
         </Card>
       )}
 
       {editable && (
         <Card>
-          <SectionTitle title="Ajouter un document (runbook, procédure, note)" icon={Plus} />
+          <SectionTitle title={t("kn.addDoc")} icon={Plus} />
           <form onSubmit={add} className="space-y-3">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <input required placeholder="Titre (ex. Redémarrer nginx)" value={form.title}
+              <input required placeholder={t("kn.titlePh")} value={form.title}
                      onChange={(e) => setForm({ ...form, title: e.target.value })} className="input sm:col-span-2" />
-              <input placeholder="Source (optionnel)" value={form.source}
+              <input placeholder={t("kn.sourcePh")} value={form.source}
                      onChange={(e) => setForm({ ...form, source: e.target.value })} className="input" />
             </div>
-            <textarea required placeholder="Contenu : procédure, commandes, contexte…" value={form.content}
+            <textarea required placeholder={t("kn.contentPh")} value={form.content}
                       onChange={(e) => setForm({ ...form, content: e.target.value })} rows={5} className="input w-full" />
-            <button disabled={busy} className="btn-primary">Ajouter</button>
+            <button disabled={busy} className="btn-primary">{t("common.add")}</button>
           </form>
         </Card>
       )}
@@ -139,7 +137,7 @@ export default function KnowledgePage() {
                 <div>
                   <p className="font-semibold text-ink">{d.title}</p>
                   <p className="text-xs text-ink-faint">
-                    {d.chars} caractères {d.source && `· ${d.source}`} · {d.embedded ? "🔎 sémantique" : "mots-clés"}
+                    {d.chars} {t("kn.chars")} {d.source && `· ${d.source}`} · {d.embedded ? t("kn.semantic") : t("kn.keywords")}
                   </p>
                 </div>
               </div>
@@ -148,7 +146,7 @@ export default function KnowledgePage() {
             <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-xs text-ink-soft">{d.content}</p>
           </div>
         ))}
-        {docs.length === 0 && <p className="text-sm text-ink-faint">Aucun document. Ajoutez vos runbooks pour que l'IA s'en serve.</p>}
+        {docs.length === 0 && <p className="text-sm text-ink-faint">{t("kn.none")}</p>}
       </MotionGrid>
     </div>
   );
