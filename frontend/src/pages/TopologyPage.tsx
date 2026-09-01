@@ -16,7 +16,10 @@ import { ErrorState, Loading } from "../components/States";
 import { buildHostViews } from "../lib/fleet";
 import { statusMeta } from "../lib/status";
 
+import { useI18n } from "../lib/i18n";
+
 export default function TopologyPage() {
+  const { t } = useI18n();
   const [hosts, setHosts] = useState<Host[]>([]);
   const [checks, setChecks] = useState<Check[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,9 +31,9 @@ export default function TopologyPage() {
         setHosts(h.data);
         setChecks(c.data);
       })
-      .catch(() => setError("Erreur de chargement"))
+      .catch(() => setError(t("common.loadError")))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   const { nodes, edges } = useMemo(() => {
     const views = buildHostViews(hosts, checks);
@@ -122,7 +125,7 @@ export default function TopologyPage() {
           source: `host-${v.parent_host_id}`,
           target: `host-${v.id}`,
           animated: true,
-          label: "dépend",
+          label: t("topo.depends"),
           style: { stroke: "#8B5CF6", strokeWidth: 1.5, strokeDasharray: "5 4" },
           labelStyle: { fill: "#8B5CF6", fontSize: 10 },
           labelBgStyle: { fill: "#111827" },
@@ -131,7 +134,7 @@ export default function TopologyPage() {
     }
 
     return { nodes, edges };
-  }, [hosts, checks]);
+  }, [hosts, checks, t]);
 
   if (loading) return <Loading />;
   if (error) return <ErrorState message={error} />;
