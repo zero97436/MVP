@@ -4,14 +4,16 @@ import { useLiveEvents, type LiveEvent } from "../../hooks/useLiveEvents";
 import { statusMeta } from "../../lib/status";
 import { timeAgo } from "../../lib/format";
 import { cn } from "../../lib/cn";
+import { useI18n } from "../../lib/i18n";
 
 const KIND_META: Record<LiveEvent["kind"], { label: string; icon: typeof Radio }> = {
-  new: { label: "Nouvelle alerte", icon: ArrowUpCircle },
-  changed: { label: "Changement d'état", icon: RefreshCw },
-  resolved: { label: "Résolu", icon: ArrowDownCircle },
+  new: { label: "live.newAlert", icon: ArrowUpCircle },
+  changed: { label: "live.changed", icon: RefreshCw },
+  resolved: { label: "live.resolved", icon: ArrowDownCircle },
 };
 
 export function LiveEventFeed({ height = 320 }: { height?: number }) {
+  const { t } = useI18n();
   const { events, connected } = useLiveEvents();
 
   return (
@@ -27,14 +29,14 @@ export function LiveEventFeed({ height = 320 }: { height?: number }) {
               connected ? "bg-status-ok animate-pulse-ring" : "bg-status-unknown",
             )}
           />
-          {connected ? "En direct" : "Connexion..."}
+          {connected ? t("live.live") : t("live.connecting")}
         </span>
       </div>
 
       <div className="space-y-2 overflow-y-auto pr-1" style={{ maxHeight: height }}>
         {events.length === 0 ? (
           <p className="py-10 text-center text-sm text-ink-faint">
-            En attente d'événements… les changements d'état apparaîtront ici en temps réel.
+            {t("live.waiting")}
           </p>
         ) : (
           <AnimatePresence initial={false}>
@@ -56,7 +58,7 @@ export function LiveEventFeed({ height = 320 }: { height?: number }) {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-ink">
-                      {kind.label} · <span className={meta.text}>{e.status}</span>
+                      {t(kind.label)} · <span className={meta.text}>{e.status}</span>
                     </p>
                     <p className="truncate text-xs text-ink-soft">
                       {e.hostName} / {e.checkName}
