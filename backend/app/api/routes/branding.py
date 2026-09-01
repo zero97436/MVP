@@ -18,7 +18,7 @@ from app.models.branding import Branding
 router = APIRouter(prefix="/branding", tags=["branding"])
 
 DEFAULTS = {
-    "display_name": "Opsora",
+    "display_name": "Orbisys",
     "tagline": "Surveillez. Comprenez. Agissez.",
     "logo_url": None,
     "accent_color": None,
