@@ -138,7 +138,7 @@ export default function TopologyPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Network Topology" subtitle="Cartographie des hôtes par environnement — liens colorés selon l'état" />
+      <PageHeader titleKey="page.topology.title" subtitleKey="page.topology.sub" />
       <Card className="p-0" >
         <div style={{ height: "70vh" }} className="rounded-xl">
           <ReactFlow
