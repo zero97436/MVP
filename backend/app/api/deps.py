@@ -67,6 +67,13 @@ def require_operator(
     )
 
 
+def get_lang(accept_language: str | None = Header(default=None)) -> str:
+    """Langue demandée par le client (en-tête Accept-Language). 'en' ou 'fr' (défaut)."""
+    if accept_language and accept_language.strip().lower().startswith("en"):
+        return "en"
+    return "fr"
+
+
 def require_ingest_key(x_ingest_key: str | None = Header(default=None)) -> None:
     """Auth des agents par clé API (en-tête X-Ingest-Key). Vide = ouvert (dev)."""
     expected = settings.INGEST_API_KEY
