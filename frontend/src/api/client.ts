@@ -13,7 +13,7 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   try {
-    const lang = localStorage.getItem("opsora_lang");
+    const lang = localStorage.getItem("orbisys_lang");
     if (lang === "fr" || lang === "en") config.headers["Accept-Language"] = lang;
   } catch { /* localStorage indisponible */ }
   return config;
