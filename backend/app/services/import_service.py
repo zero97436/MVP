@@ -20,7 +20,7 @@ from app.models.check import Check
 from app.models.check_template import CheckTemplate
 from app.models.host import Host
 
-# check_command Nagios -> (type, config) Opsora.
+# check_command Nagios -> (type, config) Orbisys.
 NAGIOS_COMMANDS: dict[str, tuple[str, dict]] = {
     "check_ping": ("ping", {}),
     "check-host-alive": ("ping", {}),
