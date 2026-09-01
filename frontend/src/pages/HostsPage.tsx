@@ -13,15 +13,13 @@ import { getLicense, type LicenseInfo } from "../api/endpoints";
 import { ImportPanel } from "../components/ImportPanel";
 import { useAuth } from "../lib/auth";
 import { canEdit } from "../lib/permissions";
+import { useI18n } from "../lib/i18n";
 
 const EMPTY = { name: "", hostname_or_ip: "", description: "", environment: "production", monitoring_mode: "agentless", ssh_port: "", ssh_user: "", ssh_password: "", parent_host_id: 0, location: "", latitude: "", longitude: "" };
-const MODE_LABEL: Record<string, string> = {
-  agentless: "Agentless (le serveur sonde l'hôte)",
-  agent: "Agent (push HTTPS depuis l'hôte)",
-  ssh: "SSH (tunnel, le serveur se connecte en SSH)",
-};
+const MODE_KEYS = ["agentless", "agent", "ssh"] as const;
 
 export default function HostsPage() {
+  const { t } = useI18n();
   const [hosts, setHosts] = useState<Host[]>([]);
   const [checks, setChecks] = useState<Check[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +68,7 @@ export default function HostsPage() {
         setChecks(c.data);
         getLicense().then((r) => setLicense(r.data)).catch(() => {});
       })
-      .catch(() => setError("Erreur de chargement"))
+      .catch(() => setError(t("common.loadError")))
       .finally(() => setLoading(false));
   };
   useEffect(() => { load(); getLicense().then((r) => setLicense(r.data)).catch(() => {}); }, []);
@@ -113,7 +111,7 @@ export default function HostsPage() {
   };
 
   const remove = async (id: number) => {
-    if (confirm("Supprimer cet hôte ?")) {
+    if (confirm(t("hosts.confirmDelete"))) {
       await deleteHost(id);
       load();
     }
@@ -132,19 +130,19 @@ export default function HostsPage() {
       <PageHeader
         helpTopic="hosts"
         title="Hosts"
-        subtitle={license ? (license.max_hosts == null ? `${license.used} hôtes · édition ${license.plan === "community" ? "Community (illimité)" : license.plan}` : `${license.used}/${license.max_hosts} hôtes (plan ${license.plan})`) : `${views.length} hôtes supervisés`}
+        subtitle={license ? (license.max_hosts == null ? `${license.used} ${t("hosts.hostsSuffix")} · ${license.plan === "community" ? "Community" : license.plan}` : `${license.used}/${license.max_hosts} ${t("hosts.hostsSuffix")} (${license.plan})`) : `${views.length} ${t("hosts.supervised")}`}
         actions={
           editable && (
             <div className="flex items-center gap-2">
               <button onClick={() => setShowDiscovery((s) => !s)} className="btn-ghost">
-                <Radar className="h-4 w-4" /> Découverte
+                <Radar className="h-4 w-4" /> {t("hosts.discovery")}
               </button>
               <button onClick={() => setShowImport((s) => !s)} className="btn-ghost">
-                <Upload className="h-4 w-4" /> Importer
+                <Upload className="h-4 w-4" /> {t("hosts.import")}
               </button>
               <button onClick={openCreate} className="btn-primary">
                 <Plus className="h-4 w-4" />
-                {showForm && editingId === null ? "Annuler" : "Nouvel hôte"}
+                {showForm && editingId === null ? t("common.cancel") : t("hosts.new")}
               </button>
             </div>
           )
@@ -154,7 +152,7 @@ export default function HostsPage() {
       {limitError && (
         <div className="card border-l-4 border-status-warning bg-status-warning/5 p-4 text-sm text-ink">
           ⚠️ {limitError}
-          <button onClick={() => setLimitError(null)} className="ml-3 text-xs text-ink-faint hover:text-ink">fermer</button>
+          <button onClick={() => setLimitError(null)} className="ml-3 text-xs text-ink-faint hover:text-ink">{t("hosts.close")}</button>
         </div>
       )}
 
@@ -165,47 +163,46 @@ export default function HostsPage() {
       {showForm && (
         <Card>
           <p className="mb-3 text-sm font-medium text-ink-soft">
-            {editingId !== null ? "Modifier l'hôte" : "Nouvel hôte"}
+            {editingId !== null ? t("hosts.edit") : t("hosts.new")}
           </p>
           <form onSubmit={submit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <input required placeholder="Nom" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input" />
-            <input required placeholder="Hostname ou IP" value={form.hostname_or_ip} onChange={(e) => setForm({ ...form, hostname_or_ip: e.target.value })} className="input" />
-            <input placeholder="Environnement" value={form.environment} onChange={(e) => setForm({ ...form, environment: e.target.value })} className="input" />
-            <input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input" />
-            <input placeholder="Site (ex. Agence Paris)" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="input" />
+            <input required placeholder={t("common.name")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input" />
+            <input required placeholder={t("hosts.f.hostnameIp")} value={form.hostname_or_ip} onChange={(e) => setForm({ ...form, hostname_or_ip: e.target.value })} className="input" />
+            <input placeholder={t("hosts.f.environment")} value={form.environment} onChange={(e) => setForm({ ...form, environment: e.target.value })} className="input" />
+            <input placeholder={t("common.description")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input" />
+            <input placeholder={t("hosts.f.site")} value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="input" />
             <div className="flex gap-2">
-              <input placeholder="Latitude (ex. 48.8566)" value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} className="input flex-1" />
-              <input placeholder="Longitude (ex. 2.3522)" value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} className="input flex-1" />
+              <input placeholder={t("hosts.f.lat")} value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} className="input flex-1" />
+              <input placeholder={t("hosts.f.lon")} value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} className="input flex-1" />
             </div>
             <label className="flex flex-col gap-1 text-xs text-ink-faint sm:col-span-2">
-              Mode de supervision
+              {t("hosts.f.mode")}
               <select value={form.monitoring_mode} onChange={(e) => setForm({ ...form, monitoring_mode: e.target.value })} className="input">
-                {Object.entries(MODE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                {MODE_KEYS.map((k) => <option key={k} value={k}>{t(`hosts.mode.${k}`)}</option>)}
               </select>
             </label>
             {form.monitoring_mode === "agent" && (
               <p className="rounded-lg border border-border bg-bg-soft/50 px-3 py-2 text-xs text-ink-faint sm:col-span-2">
-                Après création, ouvrez la fiche de l'hôte : la carte <b>« Superviser cet hôte »</b> fournit la
-                commande d'installation de l'agent (push HTTPS).
+                {t("hosts.agentHint")}
               </p>
             )}
             {form.monitoring_mode === "ssh" && (
               <div className="grid grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-3">
-                <input placeholder="Port SSH (défaut 22)" value={form.ssh_port} onChange={(e) => setForm({ ...form, ssh_port: e.target.value })} className="input" />
-                <input placeholder="Utilisateur SSH" value={form.ssh_user} onChange={(e) => setForm({ ...form, ssh_user: e.target.value })} className="input" autoComplete="off" />
-                <input type="password" placeholder="Mot de passe SSH" value={form.ssh_password} onChange={(e) => setForm({ ...form, ssh_password: e.target.value })} className="input" autoComplete="new-password" />
+                <input placeholder={t("hosts.f.sshPort")} value={form.ssh_port} onChange={(e) => setForm({ ...form, ssh_port: e.target.value })} className="input" />
+                <input placeholder={t("hosts.f.sshUser")} value={form.ssh_user} onChange={(e) => setForm({ ...form, ssh_user: e.target.value })} className="input" autoComplete="off" />
+                <input type="password" placeholder={t("hosts.f.sshPassword")} value={form.ssh_password} onChange={(e) => setForm({ ...form, ssh_password: e.target.value })} className="input" autoComplete="new-password" />
               </div>
             )}
             <label className="flex flex-col gap-1 text-xs text-ink-faint sm:col-span-2">
-              Hôte parent (dépendance — si en panne, alertes des enfants supprimées)
+              {t("hosts.f.parent")}
               <select value={form.parent_host_id} onChange={(e) => setForm({ ...form, parent_host_id: Number(e.target.value) })} className="input">
-                <option value={0}>Aucun</option>
+                <option value={0}>{t("common.none")}</option>
                 {hosts.filter((hh) => hh.id !== editingId).map((hh) => <option key={hh.id} value={hh.id}>{hh.name}</option>)}
               </select>
             </label>
             <div className="flex gap-2 sm:col-span-2">
-              <button className="btn-primary flex-1">{editingId !== null ? "Enregistrer" : "Créer l'hôte"}</button>
-              <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY); }} className="btn-ghost">Annuler</button>
+              <button className="btn-primary flex-1">{editingId !== null ? t("common.save") : t("hosts.create")}</button>
+              <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY); }} className="btn-ghost">{t("common.cancel")}</button>
             </div>
           </form>
         </Card>
@@ -213,7 +210,7 @@ export default function HostsPage() {
 
       <div className="relative max-w-sm">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher un hôte…" className="input w-full pl-9" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("hosts.searchPh")} className="input w-full pl-9" />
       </div>
 
       {loading ? (
@@ -221,7 +218,7 @@ export default function HostsPage() {
       ) : error ? (
         <ErrorState message={error} />
       ) : filtered.length === 0 ? (
-        <EmptyState message="Aucun hôte." />
+        <EmptyState message={t("hosts.empty")} />
       ) : (
         <MotionGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((h) => (
