@@ -1,7 +1,7 @@
 /** Gestion du thème : sombre / clair / système (adaptatif). Persisté en localStorage. */
 export type Theme = "dark" | "light" | "system";
 
-const KEY = "opsora_theme";
+const KEY = "orbisys_theme";
 
 export function getTheme(): Theme {
   try {
