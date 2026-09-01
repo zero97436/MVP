@@ -9,7 +9,7 @@ def test_branding_default_public(client):
     r = TestClient(app).get("/api/branding")
     assert r.status_code == 200
     data = r.json()
-    assert data["display_name"] == "Opsora"
+    assert data["display_name"] == "Orbisys"
     assert data["custom"] is False
 
 
@@ -31,7 +31,7 @@ def test_branding_set_and_reset(client):
     assert client.put("/api/branding", json={"accent_color": "rouge"}).status_code == 400
     assert client.put("/api/branding", json={"logo_url": "javascript:alert(1)"}).status_code == 400
 
-    # Reset -> retour Opsora.
+    # Reset -> retour Orbisys.
     assert client.delete("/api/branding").status_code == 204
     assert TestClient(app).get("/api/branding").json()["custom"] is False
 
@@ -47,7 +47,7 @@ def test_branding_requires_pro_plan(client, monkeypatch):
     })
     r = client.put("/api/branding", json={"display_name": "Pirate"})
     assert r.status_code == 403 and "Professional" in r.json()["detail"]
-    assert TestClient(app).get("/api/branding").json()["display_name"] == "Opsora"
+    assert TestClient(app).get("/api/branding").json()["display_name"] == "Orbisys"
 
     client.delete("/api/branding")  # nettoyage (community: delete reste admin-only, autorisé)
 
