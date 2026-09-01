@@ -10,8 +10,10 @@ import { StatusDonut } from "../components/charts/StatusDonut";
 import { LiveEventFeed } from "../components/live/LiveEventFeed";
 import { Loading } from "../components/States";
 import { buildHostViews } from "../lib/fleet";
+import { useI18n } from "../lib/i18n";
 
 export default function MonitoringPage() {
+  const { t } = useI18n();
   const [hosts, setHosts] = useState<Host[]>([]);
   const [checks, setChecks] = useState<Check[]>([]);
   const { data: summary } = usePolling<DashboardSummary>(() => getSummary().then((r) => r.data), 15000);
@@ -41,7 +43,7 @@ export default function MonitoringPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card><LiveEventFeed height={420} /></Card>
         <Card className="lg:col-span-2">
-          <SectionTitle title={`Health Overview — ${views.length} hôtes`} icon={Server} />
+          <SectionTitle title={`Health Overview — ${views.length} ${t("dash.hostsTotal")}`} icon={Server} />
           <MotionGrid className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {views.map((h) => <HealthCard key={h.id} host={h} />)}
           </MotionGrid>
@@ -49,7 +51,7 @@ export default function MonitoringPage() {
       </div>
 
       <Card className="lg:max-w-md">
-        <SectionTitle title="Répartition des états" icon={Activity} />
+        <SectionTitle title={t("dash.stateBreakdown")} icon={Activity} />
         {summary && <StatusDonut counts={summary.status_counts} />}
       </Card>
     </div>
