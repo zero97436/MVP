@@ -13,8 +13,10 @@ import { statusMeta } from "../lib/status";
 import { useAuth } from "../lib/auth";
 import { canEdit } from "../lib/permissions";
 import { cn } from "../lib/cn";
+import { useI18n } from "../lib/i18n";
 
 export default function BamPage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const editable = canEdit(user);
   const [services, setServices] = useState<BamService[]>([]);
@@ -42,7 +44,7 @@ export default function BamPage() {
   };
   const addComp = async (bsId: number, checkId: number) => { await addBamComponent(bsId, { check_id: checkId }); load(); };
   const delComp = async (id: number) => { await removeBamComponent(id); load(); };
-  const delSvc = async (id: number) => { if (confirm("Supprimer ce service métier ?")) { await deleteBamService(id); load(); } };
+  const delSvc = async (id: number) => { if (confirm(t("bam.confirmDelete"))) { await deleteBamService(id); load(); } };
 
   if (loading) return <Loading />;
   const checkName = new Map(checks.map((c) => [c.id, c.name]));
@@ -55,7 +57,7 @@ export default function BamPage() {
         subtitleKey="page.bam.sub"
         actions={editable && (
           <button onClick={() => setShowForm((s) => !s)} className="btn-primary">
-            <Plus className="h-4 w-4" /> {showForm ? "Annuler" : "Nouveau service"}
+            <Plus className="h-4 w-4" /> {showForm ? t("common.cancel") : t("bam.newService")}
           </button>
         )}
       />
@@ -63,20 +65,20 @@ export default function BamPage() {
       {showForm && editable && (
         <Card>
           <form onSubmit={create} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <input required placeholder="Nom (ex. Site e-commerce)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input" />
+            <input required placeholder={t("bam.namePh")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input" />
             <select value={form.rule} onChange={(e) => setForm({ ...form, rule: e.target.value })} className="input">
-              <option value="worst">Règle : pire état (une panne = impacté)</option>
-              <option value="percent">Règle : % de composants OK</option>
+              <option value="worst">{t("bam.ruleWorst")}</option>
+              <option value="percent">{t("bam.rulePercent")}</option>
             </select>
-            <input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input" />
-            <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="input" title="Couche (Vue Opérations)">
+            <input placeholder={t("common.description")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input" />
+            <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="input" title={t("bam.layer")}>
               <option>Applications métier</option>
               <option>Back-Office</option>
               <option>Infrastructure</option>
               <option>Général</option>
             </select>
-            <select value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} className="input" title="Icône de la tuile">
-              <option value="">Icône (auto)</option>
+            <select value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} className="input" title={t("bam.tileIcon")}>
+              <option value="">{t("bam.iconAuto")}</option>
               <option value="cart">🛒 Boutique</option>
               <option value="truck">🚚 Logistique</option>
               <option value="warehouse">🏬 Entrepôt</option>
@@ -90,13 +92,13 @@ export default function BamPage() {
               <option value="network">🔗 Réseau</option>
               <option value="shield">🛡️ Sécurité</option>
             </select>
-            <button className="btn-primary sm:col-span-3">Créer</button>
+            <button className="btn-primary sm:col-span-3">{t("common.create")}</button>
           </form>
         </Card>
       )}
 
       {services.length === 0 ? (
-        <EmptyState message="Aucun service métier. Crée-en un pour regrouper des checks critiques." />
+        <EmptyState message={t("bam.empty")} />
       ) : (
         <MotionGrid className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {services.map((s) => {
@@ -112,12 +114,12 @@ export default function BamPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <StatusBadge status={s.status} label={meta.label} />
+                    <StatusBadge status={s.status} />
                     {editable && <button onClick={() => delSvc(s.id)} className="text-status-critical/80 hover:text-status-critical"><Trash2 className="h-4 w-4" /></button>}
                   </div>
                 </div>
                 <p className="mb-2 text-xs text-ink-faint">
-                  {s.ok_count}/{s.total} composant(s) OK · règle {s.rule === "worst" ? "pire état" : "% OK"}
+                  {s.ok_count}/{s.total} {t("bam.componentsOk")} {s.rule === "worst" ? t("bam.worst") : t("bam.percentOk")}
                 </p>
                 <div className="space-y-1">
                   {s.components.map((c) => (
@@ -127,7 +129,7 @@ export default function BamPage() {
                       {editable && <button onClick={() => delComp(c.id)} className="text-ink-faint hover:text-status-critical"><X className="h-3.5 w-3.5" /></button>}
                     </div>
                   ))}
-                  {s.components.length === 0 && <p className="text-xs text-ink-faint">Aucun composant.</p>}
+                  {s.components.length === 0 && <p className="text-xs text-ink-faint">{t("bam.noComponent")}</p>}
                 </div>
                 {editable && (
                   <select
@@ -135,7 +137,7 @@ export default function BamPage() {
                     value=""
                     onChange={(e) => e.target.value && addComp(s.id, Number(e.target.value))}
                   >
-                    <option value="">+ Ajouter un check…</option>
+                    <option value="">{t("bam.addCheck")}</option>
                     {checks.map((c) => <option key={c.id} value={c.id}>{checkName.get(c.id)}</option>)}
                   </select>
                 )}
