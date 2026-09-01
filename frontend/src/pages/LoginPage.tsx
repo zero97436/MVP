@@ -7,10 +7,12 @@ import { forgotPassword } from "../api/endpoints";
 import { BrandLogo } from "../components/ui/BrandLogo";
 import { useBranding } from "../lib/branding";
 import { useAuth } from "../lib/auth";
+import { useI18n } from "../lib/i18n";
 
 export default function LoginPage() {
   const { branding } = useBranding();
   const { login } = useAuth();
+  const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
   const [email, setEmail] = useState("admin@local");
   const [password, setPassword] = useState("admin1234");
@@ -21,12 +23,12 @@ export default function LoginPage() {
 
   const onForgot = async () => {
     setError(null);
-    if (!email) { setError("Saisis d'abord ton e-mail, puis clique sur « Mot de passe oublié »."); return; }
+    if (!email) { setError(t("login.enterEmailFirst")); return; }
     try {
       const { data } = await forgotPassword(email);
       setForgotMsg(data.message);
     } catch {
-      setForgotMsg("Si un compte existe, un e-mail de réinitialisation a été envoyé.");
+      setForgotMsg(t("login.resetSent"));
     }
   };
 
@@ -53,7 +55,7 @@ export default function LoginPage() {
       await login(email, password);
       navigate("/dashboard");
     } catch {
-      setError("Identifiants invalides");
+      setError(t("login.invalid"));
     } finally {
       setLoading(false);
     }
@@ -81,7 +83,19 @@ export default function LoginPage() {
               <h1 className="text-lg font-semibold text-ink">{branding.display_name}</h1>
               <p className="text-[11px] uppercase tracking-[0.18em] text-ink-faint">{branding.tagline}</p>
             </div>
-            <p className="text-xs text-ink-faint">Plateforme de supervision</p>
+            <p className="text-xs text-ink-faint">{t("login.subtitle")}</p>
+          </div>
+          <div className="ml-auto flex items-center gap-0.5 rounded-lg border border-border bg-bg p-0.5">
+            {(["fr", "en"] as const).map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLang(l)}
+                className={`grid h-6 w-7 place-items-center rounded text-[11px] font-semibold uppercase ${lang === l ? "bg-brand text-white" : "text-ink-faint hover:text-ink"}`}
+              >
+                {l}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -91,15 +105,15 @@ export default function LoginPage() {
           </div>
         )}
 
-        <label className="mb-1 block text-sm font-medium text-ink-soft">Email</label>
+        <label className="mb-1 block text-sm font-medium text-ink-soft">{t("login.email")}</label>
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input mb-4 w-full" />
 
-        <label className="mb-1 block text-sm font-medium text-ink-soft">Mot de passe</label>
+        <label className="mb-1 block text-sm font-medium text-ink-soft">{t("login.password")}</label>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input mb-1 w-full" />
 
         <div className="mb-5 text-right">
           <button type="button" onClick={onForgot} className="text-xs text-brand hover:underline">
-            Mot de passe oublié ?
+            {t("login.forgot")}
           </button>
         </div>
 
@@ -111,7 +125,7 @@ export default function LoginPage() {
 
         <button type="submit" disabled={loading} className="btn-primary w-full py-2.5">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
-          {loading ? "Connexion..." : "Se connecter"}
+          {loading ? t("login.submitting") : t("login.submit")}
         </button>
 
         {ssoEnabled && (
@@ -120,7 +134,7 @@ export default function LoginPage() {
               <span className="h-px flex-1 bg-border" /> ou <span className="h-px flex-1 bg-border" />
             </div>
             <a href="/api/auth/sso/login" className="btn-ghost w-full justify-center py-2.5">
-              <KeyRound className="h-4 w-4" /> Connexion entreprise (SSO)
+              <KeyRound className="h-4 w-4" /> {t("login.sso")}
             </a>
           </>
         )}
