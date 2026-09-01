@@ -8,6 +8,7 @@ import { timeAgo } from "../../lib/format";
 import { cn } from "../../lib/cn";
 import { fadeUp } from "./Card";
 import { StatusBadge } from "./StatusBadge";
+import { useI18n } from "../../lib/i18n";
 
 export interface AnalysisState {
   loading: boolean;
@@ -44,6 +45,7 @@ export function AlertCard({
   onTicket?: (id: number) => void;
   ticketBusy?: boolean;
 }) {
+  const { t } = useI18n();
   const meta = statusMeta(incident.status);
   return (
     <motion.div
@@ -76,7 +78,7 @@ export function AlertCard({
           </span>
           {acknowledged && incident.acknowledged_by && (
             <span className="rounded bg-status-info/10 px-1.5 py-0.5 text-status-info">
-              acquitté par {incident.acknowledged_by}
+              {t("alert.ackedBy")} {incident.acknowledged_by}
             </span>
           )}
         </p>
@@ -86,10 +88,10 @@ export function AlertCard({
           <button
             onClick={() => onAck(incident.alert_id)}
             className="btn-ghost px-2.5 py-1.5 text-xs"
-            title={acknowledged ? "Retirer l'acquittement" : "Acquitter"}
+            title={acknowledged ? t("alert.unack") : t("alert.ack")}
           >
             <Check className="h-3.5 w-3.5" />
-            {acknowledged ? "Acquitté" : "Acquitter"}
+            {acknowledged ? t("alert.acked") : t("alert.ack")}
           </button>
         )}
         {onAnalyze && (
@@ -97,10 +99,10 @@ export function AlertCard({
             onClick={() => onAnalyze(incident.alert_id)}
             disabled={analysis?.loading}
             className="btn-ghost px-2.5 py-1.5 text-xs"
-            title="Analyser avec l'IA"
+            title={t("alert.analyzeAi")}
           >
             {analysis?.loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-            {analysis?.loading ? "Analyse..." : "Analyser (IA)"}
+            {analysis?.loading ? t("alert.analyzing") : t("alert.analyzeAiBtn")}
           </button>
         )}
         {onTicket && (
@@ -108,10 +110,10 @@ export function AlertCard({
             onClick={() => onTicket(incident.alert_id)}
             disabled={ticketBusy}
             className="btn-ghost px-2.5 py-1.5 text-xs"
-            title="Ouvrir un ticket ITSM pour cet incident"
+            title={t("alert.openTicket")}
           >
             {ticketBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Ticket className="h-3.5 w-3.5" />}
-            Ticket
+            {t("alert.ticket")}
           </button>
         )}
       </div>
@@ -127,7 +129,7 @@ export function AlertCard({
           >
             <div className="rounded-lg border border-border bg-bg-soft/60 p-3">
               <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-brand">
-                <Sparkles className="h-3.5 w-3.5" /> Analyse IA
+                <Sparkles className="h-3.5 w-3.5" /> {t("alert.aiAnalysis")}
               </p>
               {analysis.error ? (
                 <p className="text-sm text-status-critical">{analysis.error}</p>
@@ -139,7 +141,7 @@ export function AlertCard({
               {onRemediate && analysis.actions && analysis.actions.length > 0 && !analysis.error && (
                 <div className="mt-3 border-t border-border pt-3">
                   <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
-                    <Wrench className="h-3.5 w-3.5" /> Remédiation (validation requise)
+                    <Wrench className="h-3.5 w-3.5" /> {t("alert.remediation")}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {analysis.actions.map((a) => {
@@ -154,7 +156,7 @@ export function AlertCard({
                           className={isSuggested ? "btn-primary px-2.5 py-1.5 text-xs" : "btn-ghost px-2.5 py-1.5 text-xs"}
                         >
                           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : isSuggested ? <Sparkles className="h-3.5 w-3.5" /> : null}
-                          {a.label}{isSuggested ? " · suggéré" : ""}
+                          {a.label}{isSuggested ? ` · ${t("alert.suggested")}` : ""}
                         </button>
                       );
                     })}
