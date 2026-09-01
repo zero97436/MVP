@@ -14,10 +14,11 @@ import { useAuth } from "../lib/auth";
 import { canEdit } from "../lib/permissions";
 import { timeAgo } from "../lib/format";
 import { cn } from "../lib/cn";
+import { useI18n } from "../lib/i18n";
 
 const STATUSES = ["open", "in_progress", "resolved", "closed"] as const;
-const STATUS_LABEL: Record<string, string> = {
-  open: "Ouvert", in_progress: "En cours", resolved: "Résolu", closed: "Clôturé",
+const STATUS_KEY: Record<string, string> = {
+  open: "tk.status.open", in_progress: "tk.status.in_progress", resolved: "tk.status.resolved", closed: "tk.status.closed",
 };
 const STATUS_COLOR: Record<string, string> = {
   open: "#EF4444", in_progress: "#F59E0B", resolved: "#10B981", closed: "#64748B",
@@ -25,11 +26,12 @@ const STATUS_COLOR: Record<string, string> = {
 const PRIO_COLOR: Record<string, string> = {
   low: "#64748B", medium: "#3B82F6", high: "#F59E0B", critical: "#EF4444",
 };
-const PRIO_LABEL: Record<string, string> = {
-  low: "Basse", medium: "Moyenne", high: "Haute", critical: "Critique",
+const PRIO_KEY: Record<string, string> = {
+  low: "tk.prio.low", medium: "tk.prio.medium", high: "tk.prio.high", critical: "tk.prio.critical",
 };
 
 export default function TicketsPage() {
+  const { t: tr } = useI18n();
   const { user } = useAuth();
   const editable = canEdit(user);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -55,7 +57,7 @@ export default function TicketsPage() {
     load();
   };
   const changeStatus = async (id: number, status: string) => { await setTicketStatus(id, status); load(); };
-  const remove = async (id: number) => { if (confirm("Supprimer ce ticket ?")) { await deleteTicket(id); load(); } };
+  const remove = async (id: number) => { if (confirm(tr("tk.confirmDelete"))) { await deleteTicket(id); load(); } };
 
   const [newTask, setNewTask] = useState<Record<number, string>>({});
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
@@ -113,7 +115,7 @@ export default function TicketsPage() {
         subtitleKey="page.tickets.sub"
         actions={editable && (
           <button onClick={() => setShowForm((s) => !s)} className="btn-primary">
-            <Plus className="h-4 w-4" /> {showForm ? "Annuler" : "Nouveau ticket"}
+            <Plus className="h-4 w-4" /> {showForm ? tr("common.cancel") : tr("tk.new")}
           </button>
         )}
       />
@@ -126,18 +128,18 @@ export default function TicketsPage() {
           </span>
           <div className="flex-1">
             <p className="text-sm font-medium text-ink">
-              Fournisseur : <span className="uppercase">{config.provider}</span>
+              {tr("tk.provider")} : <span className="uppercase">{config.provider}</span>
               {config.provider !== "internal" && <span className="text-ink-faint"> · {config.target}</span>}
             </p>
             <p className="text-xs text-ink-faint">
               {config.provider === "internal"
-                ? "Tickets stockés localement. Configurez ITSM_PROVIDER (jira/servicenow/webhook) pour pousser vers un outil externe."
-                : "Les nouveaux tickets sont poussés vers l'outil externe."}
+                ? tr("tk.internalNote")
+                : tr("tk.externalNote")}
             </p>
           </div>
           {config.auto_create && (
             <span className="flex items-center gap-1 rounded-full bg-status-critical/10 px-3 py-1.5 text-xs font-medium text-status-critical">
-              <Zap className="h-3.5 w-3.5" /> Auto sur incident
+              <Zap className="h-3.5 w-3.5" /> {tr("tk.autoOnIncident")}
             </span>
           )}
         </div>
@@ -146,32 +148,32 @@ export default function TicketsPage() {
       {showForm && editable && (
         <Card>
           <form onSubmit={create} className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-            <input required placeholder="Titre du ticket" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input sm:col-span-3" />
+            <input required placeholder={tr("tk.titlePh")} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input sm:col-span-3" />
             <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className="input">
-              {Object.entries(PRIO_LABEL).map(([k, v]) => <option key={k} value={k}>Priorité : {v}</option>)}
+              {Object.entries(PRIO_KEY).map(([k, key]) => <option key={k} value={k}>{tr("tk.priorityPrefix")} : {tr(key)}</option>)}
             </select>
-            <textarea placeholder="Description (optionnel)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input sm:col-span-4" rows={2} />
-            <button className="btn-primary sm:col-span-4">Créer le ticket</button>
+            <textarea placeholder={tr("tk.descPh")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input sm:col-span-4" rows={2} />
+            <button className="btn-primary sm:col-span-4">{tr("tk.createBtn")}</button>
           </form>
         </Card>
       )}
 
       {/* Filtres */}
       <div className="flex flex-wrap gap-2">
-        <Chip active={filter === "all"} onClick={() => setFilter("all")} label={`Tous (${tickets.length})`} />
+        <Chip active={filter === "all"} onClick={() => setFilter("all")} label={`${tr("tk.allFilter")} (${tickets.length})`} />
         {STATUSES.map((s) => (
-          <Chip key={s} active={filter === s} onClick={() => setFilter(s)} label={`${STATUS_LABEL[s]} (${counts[s]})`} color={STATUS_COLOR[s]} />
+          <Chip key={s} active={filter === s} onClick={() => setFilter(s)} label={`${tr(STATUS_KEY[s])} (${counts[s]})`} color={STATUS_COLOR[s]} />
         ))}
         <Chip
           active={mineOnly}
           onClick={() => setMineOnly((m) => !m)}
-          label={`👤 À moi (${tickets.filter((t) => t.assigned_to === user?.email).length})`}
+          label={`${tr("tk.mine")} (${tickets.filter((t) => t.assigned_to === user?.email).length})`}
           color="#8B5CF6"
         />
       </div>
 
       {shown.length === 0 ? (
-        <EmptyState message="Aucun ticket. Créez-en un ou ouvrez-en depuis un incident." />
+        <EmptyState message={tr("tk.empty")} />
       ) : (
         <MotionGrid className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {shown.map((t) => (
@@ -184,21 +186,21 @@ export default function TicketsPage() {
                       value={draft.title}
                       onChange={(e) => setDraft({ ...draft, title: e.target.value })}
                       className="input w-full font-semibold"
-                      placeholder="Titre"
+                      placeholder={tr("tk.titleField")}
                     />
                     <textarea
                       value={draft.description}
                       onChange={(e) => setDraft({ ...draft, description: e.target.value })}
                       className="input w-full text-xs"
                       rows={6}
-                      placeholder="Description"
+                      placeholder={tr("common.description")}
                     />
                     <div className="flex items-center gap-2">
                       <select value={draft.priority} onChange={(e) => setDraft({ ...draft, priority: e.target.value })} className="input flex-1 text-xs">
-                        {Object.entries(PRIO_LABEL).map(([k, v]) => <option key={k} value={k}>Priorité : {v}</option>)}
+                        {Object.entries(PRIO_KEY).map(([k, key]) => <option key={k} value={k}>{tr("tk.priorityPrefix")} : {tr(key)}</option>)}
                       </select>
-                      <button onClick={() => setEditing(null)} className="btn-ghost px-2.5 py-1.5 text-xs"><X className="h-3.5 w-3.5" /> Annuler</button>
-                      <button onClick={saveEdit} className="btn-primary px-2.5 py-1.5 text-xs"><Save className="h-3.5 w-3.5" /> Enregistrer</button>
+                      <button onClick={() => setEditing(null)} className="btn-ghost px-2.5 py-1.5 text-xs"><X className="h-3.5 w-3.5" /> {tr("common.cancel")}</button>
+                      <button onClick={saveEdit} className="btn-primary px-2.5 py-1.5 text-xs"><Save className="h-3.5 w-3.5" /> {tr("common.save")}</button>
                     </div>
                   </div>
                 ) : (
@@ -214,35 +216,35 @@ export default function TicketsPage() {
                             onClick={() => setExpanded((p) => ({ ...p, [t.id]: !p[t.id] }))}
                             className="mt-0.5 inline-flex items-center gap-0.5 text-[11px] text-brand hover:underline"
                           >
-                            {expanded[t.id] ? <>Réduire <ChevronUp className="h-3 w-3" /></> : <>Lire tout <ChevronDown className="h-3 w-3" /></>}
+                            {expanded[t.id] ? <>{tr("tk.collapse")} <ChevronUp className="h-3 w-3" /></> : <>{tr("tk.readAll")} <ChevronDown className="h-3 w-3" /></>}
                           </button>
                         </>
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
                       {editable && (
-                        <button onClick={() => startEdit(t)} className="btn-ghost px-2 py-1" title="Modifier le ticket">
+                        <button onClick={() => startEdit(t)} className="btn-ghost px-2 py-1" title={tr("tk.editTicket")}>
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                       )}
                       <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ background: `${PRIO_COLOR[t.priority]}1f`, color: PRIO_COLOR[t.priority] }}>
-                        {PRIO_LABEL[t.priority]}
+                        {tr(PRIO_KEY[t.priority])}
                       </span>
                     </div>
                   </div>
                 )}
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-ink-faint">
                   <span className="rounded-full px-2 py-0.5 font-medium" style={{ background: `${STATUS_COLOR[t.status]}1f`, color: STATUS_COLOR[t.status] }}>
-                    {STATUS_LABEL[t.status]}
+                    {tr(STATUS_KEY[t.status])}
                   </span>
                   {t.assigned_to && (
                     <span className="flex items-center gap-1 rounded-full bg-brand/10 px-2 py-0.5 font-medium text-brand">
                       <UserCheck className="h-3 w-3" /> {t.assigned_to}
                     </span>
                   )}
-                  {t.alert_id && <span>· incident #{t.alert_id}</span>}
+                  {t.alert_id && <span>· {tr("tk.incident")} #{t.alert_id}</span>}
                   {t.created_at && <span>· {timeAgo(t.created_at)}</span>}
-                  {t.created_by && <span>· par {t.created_by}</span>}
+                  {t.created_by && <span>· {tr("tk.by")} {t.created_by}</span>}
                   {t.external_id && (
                     t.external_url
                       ? <a href={t.external_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-brand hover:underline">{t.external_id} <ExternalLink className="h-3 w-3" /></a>
@@ -253,7 +255,7 @@ export default function TicketsPage() {
                 <div className="mt-3 rounded-lg border border-border bg-bg-soft/40 p-2.5">
                   <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
                     <ListChecks className="h-3.5 w-3.5" />
-                    Tâches {t.tasks.length > 0 && `· ${t.tasks.filter((x) => x.done).length}/${t.tasks.length}`}
+                    {tr("tk.tasks")} {t.tasks.length > 0 && `· ${t.tasks.filter((x) => x.done).length}/${t.tasks.length}`}
                   </p>
                   {t.tasks.length > 0 && (
                     <div className="mb-1.5 h-1 w-full overflow-hidden rounded-full bg-black/30">
@@ -283,7 +285,7 @@ export default function TicketsPage() {
                         )}
                       </div>
                     ))}
-                    {t.tasks.length === 0 && <p className="text-xs text-ink-faint">Aucune tâche.</p>}
+                    {t.tasks.length === 0 && <p className="text-xs text-ink-faint">{tr("tk.noTask")}</p>}
                   </div>
                   {editable && (
                     <form
@@ -293,7 +295,7 @@ export default function TicketsPage() {
                       <input
                         value={newTask[t.id] ?? ""}
                         onChange={(e) => setNewTask((p) => ({ ...p, [t.id]: e.target.value }))}
-                        placeholder="Ajouter une tâche…"
+                        placeholder={tr("tk.addTask")}
                         className="input flex-1 py-1 text-xs"
                       />
                       <button type="submit" className="btn-ghost px-2 py-1"><Plus className="h-3.5 w-3.5" /></button>
@@ -308,7 +310,7 @@ export default function TicketsPage() {
                     className="flex w-full items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-ink-faint"
                   >
                     <span className="flex items-center gap-1.5">
-                      <MessageSquare className="h-3.5 w-3.5" /> Suivis {t.comments.length > 0 && `· ${t.comments.length}`}
+                      <MessageSquare className="h-3.5 w-3.5" /> {tr("tk.followups")} {t.comments.length > 0 && `· ${t.comments.length}`}
                     </span>
                     {showComments[t.id] ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   </button>
@@ -331,7 +333,7 @@ export default function TicketsPage() {
                             <p className="mt-0.5 whitespace-pre-wrap text-xs text-ink-soft">{c.body}</p>
                           </div>
                         ))}
-                        {t.comments.length === 0 && <p className="text-xs text-ink-faint">Aucun suivi.</p>}
+                        {t.comments.length === 0 && <p className="text-xs text-ink-faint">{tr("tk.noFollowup")}</p>}
                       </div>
                       {editable && (
                         <form onSubmit={(e) => { e.preventDefault(); postComment(t.id); }} className="mt-2 flex items-end gap-2">
@@ -346,7 +348,7 @@ export default function TicketsPage() {
                               }
                             }}
                             rows={1}
-                            placeholder="Ajouter un suivi… (Maj+Entrée = nouvelle ligne)"
+                            placeholder={tr("tk.addFollowup")}
                             className="input flex-1 resize-y py-1 text-xs"
                           />
                           <button type="submit" className="btn-ghost px-2 py-1.5"><Send className="h-3.5 w-3.5" /></button>
@@ -359,15 +361,15 @@ export default function TicketsPage() {
                 {editable && (
                   <div className="mt-3 flex items-center gap-2">
                     <select value={t.status} onChange={(e) => changeStatus(t.id, e.target.value)} className="input flex-1 text-xs">
-                      {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+                      {STATUSES.map((s) => <option key={s} value={s}>{tr(STATUS_KEY[s])}</option>)}
                     </select>
                     <select
                       value={t.assigned_to_id ?? ""}
                       onChange={(e) => assign(t.id, e.target.value)}
                       className="input flex-1 text-xs"
-                      title="Assigner ce ticket"
+                      title={tr("tk.assignTicket")}
                     >
-                      <option value="">Non assigné</option>
+                      <option value="">{tr("tk.unassigned")}</option>
                       {assignees.map((a) => (
                         <option key={a.id} value={a.id}>{a.full_name || a.email}</option>
                       ))}
