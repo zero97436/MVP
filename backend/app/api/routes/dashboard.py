@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, require_operator
+from app.api.deps import get_current_user, get_lang, require_operator
 from app.core.license import require_feature
 from app.db.session import get_db
 from app.models.user import User
@@ -120,10 +120,10 @@ def unacknowledge_incident(
 
 
 @router.post("/ai-summary")
-def ai_summary(db: Session = Depends(get_db)):
+def ai_summary(db: Session = Depends(get_db), lang: str = Depends(get_lang)):
     """Résumé santé global généré par l'IA (Ollama)."""
     try:
-        return AIService(db).health_summary()
+        return AIService(db).health_summary(lang)
     except OllamaError as exc:
         raise HTTPException(503, str(exc))
 
@@ -146,10 +146,10 @@ def remediate_incident(
 
 
 @router.post("/incidents/{alert_id}/analyze")
-def analyze_incident(alert_id: int, db: Session = Depends(get_db)):
+def analyze_incident(alert_id: int, db: Session = Depends(get_db), lang: str = Depends(get_lang)):
     """Analyse IA (Ollama) de l'incident : cause probable, impact, remédiation."""
     try:
-        result = AIService(db).analyze_incident(alert_id)
+        result = AIService(db).analyze_incident(alert_id, lang)
     except OllamaError as exc:
         raise HTTPException(503, str(exc))
     if result is None:
