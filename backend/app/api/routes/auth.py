@@ -6,7 +6,7 @@ from jose import JWTError, jwt
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_lang
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.ratelimit import login_limiter
@@ -59,19 +59,28 @@ def _reset_link(request: Request, token: str) -> str:
     return f"{proto}://{host}/reset-password?token={token}"
 
 
-def _send_reset_email(to: str, link: str) -> bool:
+def _send_reset_email(to: str, link: str, lang: str = "fr") -> bool:
     if not settings.SMTP_HOST:
         return False
     import smtplib
     from email.mime.text import MIMEText
 
-    body = (
-        "Bonjour,\n\nVous avez demandé la réinitialisation de votre mot de passe Opsora.\n\n"
-        f"Cliquez sur ce lien (valable {RESET_TTL_MINUTES} minutes) :\n{link}\n\n"
-        "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.\n\nL'équipe Opsora"
-    )
+    if lang == "en":
+        body = (
+            "Hello,\n\nYou requested a reset of your Opsora password.\n\n"
+            f"Click this link (valid for {RESET_TTL_MINUTES} minutes):\n{link}\n\n"
+            "If you did not request this, ignore this email.\n\nThe Opsora team"
+        )
+        subject = "Reset your Opsora password"
+    else:
+        body = (
+            "Bonjour,\n\nVous avez demandé la réinitialisation de votre mot de passe Opsora.\n\n"
+            f"Cliquez sur ce lien (valable {RESET_TTL_MINUTES} minutes) :\n{link}\n\n"
+            "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.\n\nL'équipe Opsora"
+        )
+        subject = "Réinitialisation de votre mot de passe Opsora"
     msg = MIMEText(body)
-    msg["Subject"] = "Réinitialisation de votre mot de passe Opsora"
+    msg["Subject"] = subject
     msg["From"] = settings.SMTP_FROM
     msg["To"] = to
     try:
@@ -133,16 +142,19 @@ def change_password(
 
 
 @router.post("/forgot-password")
-def forgot_password(payload: ForgotPassword, request: Request, db: Session = Depends(get_db)):
+def forgot_password(payload: ForgotPassword, request: Request, db: Session = Depends(get_db),
+                    lang: str = Depends(get_lang)):
     """Envoie un lien de réinitialisation. Réponse toujours neutre (anti-énumération)."""
     user = UserRepository(db).get_by_email(payload.email)
     if user and user.is_active:
         link = _reset_link(request, _make_reset_token(user))
-        if not _send_reset_email(user.email, link):
+        if not _send_reset_email(user.email, link, lang):
             # SMTP non configuré : on journalise le lien (dev / diagnostic).
             logger.info("Lien de réinitialisation pour %s : %s", user.email, link)
-    # Ne révèle jamais si l'e-mail existe.
-    return {"ok": True, "message": "Si un compte existe, un e-mail de réinitialisation a été envoyé."}
+    # Ne révèle jamais si l'e-mail existe. Message neutre localisé côté client.
+    msg = ("If an account exists, a reset email has been sent." if lang == "en"
+           else "Si un compte existe, un e-mail de réinitialisation a été envoyé.")
+    return {"ok": True, "message": msg}
 
 
 @router.post("/reset-password")
