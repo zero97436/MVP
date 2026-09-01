@@ -10,7 +10,7 @@ export interface BrandingInfo {
 }
 
 export const DEFAULT_BRANDING: BrandingInfo = {
-  display_name: "Opsora",
+  display_name: "Orbisys",
   tagline: "Surveillez. Comprenez. Agissez.",
   logo_url: null,
   accent_color: null,
