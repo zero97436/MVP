@@ -47,6 +47,7 @@ import { statusMeta } from "../lib/status";
 import { availabilityBuckets, availabilityRatio } from "../lib/series";
 import { formatPercent } from "../lib/format";
 import { cn } from "../lib/cn";
+import { useI18n } from "../lib/i18n";
 
 const DAY = 24 * 3600 * 1000;
 const SEV: Record<CheckStatus, number> = { CRITICAL: 0, WARNING: 1, UNKNOWN: 2, OK: 3 };
@@ -59,14 +60,15 @@ const DEFAULT_LAYOUT: LayoutSection[] = [
   { id: "fleet", visible: true },
 ];
 const SECTION_TITLE: Record<string, string> = {
-  hero: "État global & disponibilité",
-  kpi: "Compteurs",
-  incidents: "Incidents, répartition & live",
-  trend: "Tendance & résumé IA",
-  fleet: "Flotte (Health Overview)",
+  hero: "dash.sec.hero",
+  kpi: "dash.sec.kpis",
+  incidents: "dash.sec.incidents",
+  trend: "dash.sec.trend",
+  fleet: "dash.sec.hero",
 };
 
 export default function DashboardPage() {
+  const { t } = useI18n();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [hosts, setHosts] = useState<Host[]>([]);
@@ -125,15 +127,15 @@ export default function DashboardPage() {
     : "OK";
   const meta = statusMeta(overall);
   const headline =
-    overall === "CRITICAL" ? "Intervention requise"
-    : overall === "WARNING" ? "Points à surveiller"
-    : overall === "UNKNOWN" ? "En attente de données"
-    : "Tous les systèmes opérationnels";
+    overall === "CRITICAL" ? t("dash.head.critical")
+    : overall === "WARNING" ? t("dash.head.watch")
+    : overall === "UNKNOWN" ? t("dash.head.waiting")
+    : t("dash.head.allOk");
   const subline =
-    overall === "CRITICAL" ? `${c.CRITICAL} service(s) critiques · ${incidents.length} incident(s) actif(s)`
-    : overall === "WARNING" ? `${c.WARNING} avertissement(s) en cours`
-    : overall === "UNKNOWN" ? "Aucun résultat de check récent"
-    : "Aucun incident actif — rien à signaler";
+    overall === "CRITICAL" ? `${c.CRITICAL} ${t("dash.criticalServices")} · ${incidents.length} ${t("dash.activeIncidents")}`
+    : overall === "WARNING" ? `${c.WARNING} ${t("dash.warningsOngoing")}`
+    : overall === "UNKNOWN" ? t("dash.sub.noRecent")
+    : t("dash.sub.noIncident");
 
   const sortedIncidents = [...incidents].sort(
     (a, b) =>
@@ -162,7 +164,7 @@ export default function DashboardPage() {
       setCustomize(false);
     } catch (e: unknown) {
       if ((e as { response?: { status?: number } })?.response?.status === 403) {
-        alert("Dashboards personnalisables : disponibles à partir du plan Professional.");
+        alert(t("dash.proOnly"));
         cancelLayout();
       }
     }
@@ -208,23 +210,23 @@ export default function DashboardPage() {
             </div>
             {incidents.length > 0 && (
               <Link to="/incidents" className="btn-primary shrink-0 px-3 py-2 text-xs">
-                Traiter <ArrowRight className="h-3.5 w-3.5" />
+                {t("dash.handle")} <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             )}
           </div>
 
           {/* mini-stats en pied de hero */}
           <div className="mt-5 grid grid-cols-4 gap-3 border-t border-border pt-4">
-            <HeroStat label="Hôtes" value={summary.hosts_total} />
-            <HeroStat label="Checks" value={summary.checks_total} />
-            <HeroStat label="Incidents" value={incidents.length} accent={incidents.length ? meta.color : undefined} />
-            <HeroStat label="Dispo 24 h" value={formatPercent(availability, 1)} />
+            <HeroStat label={t("dash.hostsTotal")} value={summary.hosts_total} />
+            <HeroStat label={t("dash.checksTotal")} value={summary.checks_total} />
+            <HeroStat label={t("dash.incidents")} value={incidents.length} accent={incidents.length ? meta.color : undefined} />
+            <HeroStat label={t("dash.avail24")} value={formatPercent(availability, 1)} />
           </div>
         </div>
 
         {/* Disponibilité en très gros + jauge */}
         <div className="card flex flex-col justify-between p-6">
-          <SectionTitle title="Disponibilité" icon={Gauge} />
+          <SectionTitle title={t("dash.availability")} icon={Gauge} />
           <div className="flex flex-1 flex-col items-center justify-center py-2">
             <span
               className="text-5xl font-bold tabular-nums"
@@ -232,7 +234,7 @@ export default function DashboardPage() {
             >
               {formatPercent(availability, 1)}
             </span>
-            <span className="mt-1 text-xs text-ink-faint">sur les dernières 24 h</span>
+            <span className="mt-1 text-xs text-ink-faint">{t("dash.last24")}</span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-bg-soft">
             <div
@@ -248,8 +250,8 @@ export default function DashboardPage() {
     ),
     kpi: (
       <MotionGrid className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <Kpi label="Hôtes UP" value={hostsOnline} tone="ok" icon={Server} to="/hosts" />
-        <Kpi label="Hôtes DOWN" value={hostsOffline} tone={hostsOffline ? "critical" : "muted"} icon={ServerOff} to="/hosts" />
+        <Kpi label={t("dash.hostsUp")} value={hostsOnline} tone="ok" icon={Server} to="/hosts" />
+        <Kpi label={t("dash.hostsDown")} value={hostsOffline} tone={hostsOffline ? "critical" : "muted"} icon={ServerOff} to="/hosts" />
         <Kpi label="OK" value={c.OK ?? 0} tone="ok" icon={CheckCircle2} to="/checks" />
         <Kpi label="Warning" value={c.WARNING ?? 0} tone={(c.WARNING ?? 0) ? "warning" : "muted"} icon={AlertTriangle} to="/incidents" />
         <Kpi label="Critical" value={c.CRITICAL ?? 0} tone={(c.CRITICAL ?? 0) ? "critical" : "muted"} icon={XCircle} to="/incidents" />
@@ -261,17 +263,17 @@ export default function DashboardPage() {
         {/* Incidents — colonne large, priorité de lecture */}
         <Card className="lg:col-span-2">
           <SectionTitle
-            title={`Incidents actifs (${incidents.length})`}
+            title={`${t("dash.activeIncidentsTitle")} (${incidents.length})`}
             icon={AlertTriangle}
             action={incidents.length > 6 ? (
-              <Link to="/incidents" className="text-xs text-brand hover:underline">Voir tout →</Link>
+              <Link to="/incidents" className="text-xs text-brand hover:underline">{t("dash.seeAll")}</Link>
             ) : undefined}
           />
           {incidents.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-10 text-center">
               <CheckCircle2 className="h-10 w-10 text-status-ok" />
-              <p className="text-sm font-medium text-status-ok">Tout est sous contrôle 🎉</p>
-              <p className="text-xs text-ink-faint">Aucun incident actif en ce moment.</p>
+              <p className="text-sm font-medium text-status-ok">{t("dash.allUnderControl")}</p>
+              <p className="text-xs text-ink-faint">{t("dash.noIncidentNow")}</p>
             </div>
           ) : (
             <MotionGrid className="grid grid-cols-1 gap-3">
@@ -285,7 +287,7 @@ export default function DashboardPage() {
         {/* Colonne droite : donut + live */}
         <div className="flex flex-col gap-5">
           <Card>
-            <SectionTitle title="Répartition des états" />
+            <SectionTitle title={t("dash.stateBreakdown")} />
             <StatusDonut counts={c} />
           </Card>
           <Card>
@@ -297,7 +299,7 @@ export default function DashboardPage() {
     trend: (
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <SectionTitle title="Tendance de disponibilité — 24 h" icon={Activity} />
+          <SectionTitle title={t("dash.trend24")} icon={Activity} />
           <AvailabilityChart data={avail24h} />
         </Card>
         <div className="lg:col-span-1">
@@ -307,9 +309,9 @@ export default function DashboardPage() {
     ),
     fleet: (
       <Card>
-        <SectionTitle title={`Health Overview — ${hostViews.length} hôtes`} icon={Server} />
+        <SectionTitle title={`Health Overview — ${hostViews.length} ${t("dash.hostsTotal")}`} icon={Server} />
         {hostViews.length === 0 ? (
-          <p className="py-6 text-center text-sm text-ink-faint">Aucun hôte enregistré.</p>
+          <p className="py-6 text-center text-sm text-ink-faint">{t("dash.noHosts")}</p>
         ) : (
           <MotionGrid className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
             {sortedHosts.map((h) => (
@@ -326,24 +328,24 @@ export default function DashboardPage() {
       <PageHeader
         helpTopic="dashboard"
         title="Dashboard"
-        subtitle="Vue d'ensemble temps réel"
+        subtitle={t("dash.subtitle")}
         actions={
           <div className="flex items-center gap-2">
-            <StatusBadge status={overall} label={meta.label} />
+            <StatusBadge status={overall} />
             {!customize ? (
-              <button onClick={() => setCustomize(true)} className="btn-ghost" title="Réorganiser / masquer les sections">
-                <SlidersHorizontal className="h-4 w-4" /> Personnaliser
+              <button onClick={() => setCustomize(true)} className="btn-ghost" title={t("dash.customizeHint")}>
+                <SlidersHorizontal className="h-4 w-4" /> {t("dash.customize")}
               </button>
             ) : (
               <>
-                <button onClick={resetLayout} className="btn-ghost text-ink-faint" title="Revenir au dashboard par défaut">
-                  <RotateCcw className="h-4 w-4" /> Défaut
+                <button onClick={resetLayout} className="btn-ghost text-ink-faint" title={t("dash.defaultHint")}>
+                  <RotateCcw className="h-4 w-4" /> {t("dash.default")}
                 </button>
                 <button onClick={cancelLayout} className="btn-ghost">
-                  <X className="h-4 w-4" /> Annuler
+                  <X className="h-4 w-4" /> {t("common.cancel")}
                 </button>
                 <button onClick={saveLayout} className="btn-primary">
-                  <Save className="h-4 w-4" /> Enregistrer
+                  <Save className="h-4 w-4" /> {t("common.save")}
                 </button>
               </>
             )}
@@ -365,16 +367,16 @@ export default function DashboardPage() {
           >
             <div className="absolute left-3 right-3 top-2 flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
-                {SECTION_TITLE[s.id] ?? s.id}
+                {SECTION_TITLE[s.id] ? t(SECTION_TITLE[s.id]) : s.id}
               </span>
               <div className="flex items-center gap-1">
-                <button onClick={() => move(i, -1)} disabled={i === 0} className="btn-ghost px-2 py-1 disabled:opacity-30" title="Monter">
+                <button onClick={() => move(i, -1)} disabled={i === 0} className="btn-ghost px-2 py-1 disabled:opacity-30" title={t("dash.moveUp")}>
                   <ChevronUp className="h-4 w-4" />
                 </button>
-                <button onClick={() => move(i, 1)} disabled={i === layout.length - 1} className="btn-ghost px-2 py-1 disabled:opacity-30" title="Descendre">
+                <button onClick={() => move(i, 1)} disabled={i === layout.length - 1} className="btn-ghost px-2 py-1 disabled:opacity-30" title={t("dash.moveDown")}>
                   <ChevronDown className="h-4 w-4" />
                 </button>
-                <button onClick={() => toggle(i)} className="btn-ghost px-2 py-1" title={s.visible ? "Masquer" : "Afficher"}>
+                <button onClick={() => toggle(i)} className="btn-ghost px-2 py-1" title={s.visible ? t("dash.hide") : t("dash.show")}>
                   {s.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                 </button>
               </div>
