@@ -10,7 +10,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 
 export type Lang = "fr" | "en";
 
-const KEY = "opsora_lang";
+const KEY = "orbisys_lang";
 
 export function getLang(): Lang {
   try {
@@ -393,7 +393,7 @@ const DICT: Record<string, { fr: string; en: string }> = {
   "hd.mode.agent": { fr: "Agent (push HTTPS)", en: "Agent (HTTPS push)" },
   "hd.mode.ssh": { fr: "SSH (tunnel)", en: "SSH (tunnel)" },
   "hd.desc.agentless": { fr: "Le serveur sonde directement l'hôte sur le réseau (ICMP, SNMP, HTTP, TCP…).", en: "The server probes the host directly over the network (ICMP, SNMP, HTTP, TCP…)." },
-  "hd.desc.agent": { fr: "Un agent installé sur l'hôte pousse ses métriques et résultats vers Opsora en HTTPS.", en: "An agent on the host pushes its metrics and results to Opsora over HTTPS." },
+  "hd.desc.agent": { fr: "Un agent installé sur l'hôte pousse ses métriques et résultats vers Orbisys en HTTPS.", en: "An agent on the host pushes its metrics and results to Orbisys over HTTPS." },
   "hd.desc.ssh": { fr: "Le serveur se connecte en SSH à l'hôte pour exécuter les checks. Les identifiants SSH de l'hôte sont réutilisés.", en: "The server connects over SSH to run the checks. The host's SSH credentials are reused." },
   "hd.installCmd": { fr: "Commande d'installation de l'agent", en: "Agent install command" },
   "hd.prereq": { fr: "Prérequis :", en: "Prerequisites:" },
@@ -483,7 +483,7 @@ const DICT: Record<string, { fr: string; en: string }> = {
   // Personnalisation de marque
   "brand.applied": { fr: "Identité appliquée à toute l'interface.", en: "Branding applied across the interface." },
   "brand.saveFail": { fr: "Enregistrement impossible.", en: "Save failed." },
-  "brand.restored": { fr: "Identité Opsora restaurée.", en: "Opsora branding restored." },
+  "brand.restored": { fr: "Identité Orbisys restaurée.", en: "Orbisys branding restored." },
   "brand.title": { fr: "Personnalisation de marque", en: "Brand customization" },
   "brand.intro": { fr: "Plan Professional — nom, devise, logo et couleur d'accent appliqués à toute l'interface (connexion, menu, page de statut publique, mode TV).", en: "Professional plan — name, tagline, logo and accent color applied across the interface (login, menu, public status page, TV mode)." },
   "brand.namePh": { fr: "Nom affiché (ex. Supervision ACME)", en: "Display name (e.g. ACME Monitoring)" },
@@ -492,7 +492,7 @@ const DICT: Record<string, { fr: string; en: string }> = {
   "brand.accentPh": { fr: "Couleur d'accent #RRGGBB", en: "Accent color #RRGGBB" },
   "brand.pickColor": { fr: "Choisir la couleur", en: "Pick the color" },
   "brand.apply": { fr: "Appliquer", en: "Apply" },
-  "brand.restore": { fr: "Restaurer Opsora", en: "Restore Opsora" },
+  "brand.restore": { fr: "Restaurer Orbisys", en: "Restore Orbisys" },
 
   // Import / migration
   "imp.failed": { fr: "Import impossible", en: "Import failed" },
