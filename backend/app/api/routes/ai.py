@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from typing import Any
 
 from app.core.license import require_feature
-from app.api.deps import get_current_user, require_operator
+from app.api.deps import get_current_user, get_lang, require_operator
 from app.db.session import get_db
 from app.services.ai_service import AIService, OllamaError
 
@@ -27,11 +27,11 @@ class ApplyPlanRequest(BaseModel):
 
 
 @router.post("/chat")
-def chat(payload: ChatRequest, db: Session = Depends(get_db)):
+def chat(payload: ChatRequest, db: Session = Depends(get_db), lang: str = Depends(get_lang)):
     """Assistant NL : répond à partir de l'état courant de la plateforme."""
     try:
         return AIService(db).chat(
-            payload.question, [m.model_dump() for m in payload.history]
+            payload.question, [m.model_dump() for m in payload.history], lang
         )
     except OllamaError as exc:
         raise HTTPException(503, str(exc))
