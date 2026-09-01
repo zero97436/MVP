@@ -3,13 +3,14 @@ import { useLocation } from "react-router-dom";
 import { BookOpen, Search } from "lucide-react";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Card } from "../components/ui/Card";
-import { DOC_SECTIONS } from "../lib/docs";
+import { getDocSections } from "../lib/docs";
 import { useI18n } from "../lib/i18n";
 
 export default function DocsPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { hash } = useLocation();
   const [q, setQ] = useState("");
+  const DOC_SECTIONS = useMemo(() => getDocSections(lang), [lang]);
 
   // Défilement vers l'ancre demandée (ex. /docs#hosts) au chargement / changement de hash.
   useEffect(() => {
@@ -31,7 +32,7 @@ export default function DocsPage() {
         .toLowerCase()
         .includes(needle),
     );
-  }, [q]);
+  }, [q, DOC_SECTIONS]);
 
   return (
     <div className="space-y-6">
