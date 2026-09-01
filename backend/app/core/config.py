@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # --- App ---
-    APP_NAME: str = "Opsora"
+    APP_NAME: str = "Orbisys"
     DEBUG: bool = False
     API_PREFIX: str = "/api"
     # Langue des contenus générés côté serveur (tickets auto, e-mails) : "fr" ou "en".
