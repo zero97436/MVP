@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { globalSearch, type SearchResults } from "../api/endpoints";
 import { cn } from "../lib/cn";
+import { useI18n } from "../lib/i18n";
 
 interface Item {
   key: string;
@@ -18,23 +19,23 @@ interface Item {
   color?: string;
 }
 
-const PAGES: { label: string; to: string }[] = [
-  { label: "Dashboard", to: "/dashboard" },
-  { label: "Monitoring", to: "/monitoring" },
-  { label: "Hosts", to: "/hosts" },
-  { label: "Checks", to: "/checks" },
-  { label: "Templates", to: "/templates" },
-  { label: "Incidents", to: "/incidents" },
-  { label: "Tickets", to: "/tickets" },
-  { label: "APM", to: "/apm" },
-  { label: "Conteneurs", to: "/containers" },
-  { label: "Topology", to: "/topology" },
-  { label: "Opérations", to: "/operations" },
-  { label: "Métier (BAM)", to: "/bam" },
-  { label: "Reports", to: "/reports" },
-  { label: "Événements", to: "/events" },
-  { label: "Assistant", to: "/assistant" },
-  { label: "Settings", to: "/settings" },
+const PAGES: { labelKey: string; to: string }[] = [
+  { labelKey: "nav.dashboard", to: "/dashboard" },
+  { labelKey: "nav.monitoring", to: "/monitoring" },
+  { labelKey: "nav.hosts", to: "/hosts" },
+  { labelKey: "nav.checks", to: "/checks" },
+  { labelKey: "nav.templates", to: "/templates" },
+  { labelKey: "nav.incidents", to: "/incidents" },
+  { labelKey: "nav.tickets", to: "/tickets" },
+  { labelKey: "nav.apm", to: "/apm" },
+  { labelKey: "nav.containers", to: "/containers" },
+  { labelKey: "nav.topology", to: "/topology" },
+  { labelKey: "nav.operations", to: "/operations" },
+  { labelKey: "nav.business", to: "/bam" },
+  { labelKey: "nav.reports", to: "/reports" },
+  { labelKey: "nav.events", to: "/events" },
+  { labelKey: "nav.assistant", to: "/assistant" },
+  { labelKey: "nav.settings", to: "/settings" },
 ];
 
 const STATUS_COLOR: Record<string, string> = {
@@ -42,6 +43,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export function CommandPalette() {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [results, setResults] = useState<SearchResults | null>(null);
@@ -87,30 +89,30 @@ export function CommandPalette() {
     const out: Item[] = [];
     const needle = q.trim().toLowerCase();
     if (needle.length >= 1) {
-      for (const p of PAGES.filter((p) => p.label.toLowerCase().includes(needle)).slice(0, 4)) {
-        out.push({ key: `page-${p.to}`, icon: LayoutDashboard, title: p.label, group: "Pages", to: p.to });
+      for (const p of PAGES.filter((p) => t(p.labelKey).toLowerCase().includes(needle)).slice(0, 4)) {
+        out.push({ key: `page-`, icon: LayoutDashboard, title: t(p.labelKey), group: "cmd.grp.pages", to: p.to });
       }
     }
     if (results) {
       for (const h of results.hosts) {
-        out.push({ key: `h-${h.id}`, icon: Server, title: h.name, subtitle: h.hostname_or_ip, group: "Hôtes", to: `/hosts/${h.id}` });
+        out.push({ key: `h-${h.id}`, icon: Server, title: h.name, subtitle: h.hostname_or_ip, group: "cmd.grp.hosts", to: `/hosts/` });
       }
       for (const c of results.checks) {
         out.push({
           key: `c-${c.id}`, icon: ListChecks, title: c.name,
-          subtitle: `${c.host_name} · ${c.type}`, group: "Checks", to: `/checks/${c.id}`,
+          subtitle: `${c.host_name} · ${c.type}`, group: "cmd.grp.checks", to: `/checks/`,
           color: STATUS_COLOR[c.last_status ?? ""],
         });
       }
       for (const t of results.tickets) {
-        out.push({ key: `t-${t.id}`, icon: Ticket, title: `#${t.id} ${t.title}`, subtitle: `${t.status} · ${t.priority}`, group: "Tickets", to: "/tickets" });
+        out.push({ key: `t-${t.id}`, icon: Ticket, title: `#${t.id} ${t.title}`, subtitle: `${t.status} · ${t.priority}`, group: "cmd.grp.tickets", to: "/tickets" });
       }
       for (const e of results.events) {
-        out.push({ key: `e-${e.id}`, icon: History, title: e.message.slice(0, 90), subtitle: e.level, group: "Événements", to: "/events" });
+        out.push({ key: `e-${e.id}`, icon: History, title: e.message.slice(0, 90), subtitle: e.level, group: "cmd.grp.events", to: "/events" });
       }
     }
     return out;
-  }, [q, results]);
+  }, [q, results, t]);
 
   const go = useCallback((item: Item) => {
     setOpen(false);
@@ -148,7 +150,7 @@ export function CommandPalette() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 onKeyDown={onInputKey}
-                placeholder="Rechercher un hôte, check, ticket, événement, page…"
+                placeholder={t("cmd.searchPh")}
                 className="w-full bg-transparent py-3.5 text-sm text-ink outline-none placeholder:text-ink-faint"
               />
               <kbd className="shrink-0 rounded border border-border bg-bg-soft px-1.5 py-0.5 text-[10px] text-ink-faint">Esc</kbd>
@@ -157,7 +159,7 @@ export function CommandPalette() {
             <div className="max-h-[50vh] overflow-y-auto p-2">
               {items.length === 0 ? (
                 <p className="py-8 text-center text-sm text-ink-faint">
-                  {q.trim().length < 2 ? "Tape au moins 2 caractères…" : "Aucun résultat."}
+                  {q.trim().length < 2 ? t("cmd.min2") : t("cmd.noResult")}
                 </p>
               ) : (
                 items.map((item, i) => {
@@ -167,7 +169,7 @@ export function CommandPalette() {
                     <div key={item.key}>
                       {header && (
                         <p className="px-2 pb-1 pt-2.5 text-[10px] font-semibold uppercase tracking-wider text-ink-faint">
-                          {header}
+                          {t(header)}
                         </p>
                       )}
                       <button
@@ -193,8 +195,8 @@ export function CommandPalette() {
             </div>
 
             <div className="flex items-center gap-3 border-t border-border bg-bg-soft/40 px-4 py-2 text-[10px] text-ink-faint">
-              <span>↑↓ naviguer</span><span>↵ ouvrir</span><span>Esc fermer</span>
-              <span className="ml-auto flex items-center gap-1">Ctrl+K <ArrowRight className="h-3 w-3" /> recherche globale</span>
+              <span>↑↓ {t("cmd.navigate")}</span><span>↵ {t("cmd.open")}</span><span>Esc {t("cmd.close")}</span>
+              <span className="ml-auto flex items-center gap-1">Ctrl+K <ArrowRight className="h-3 w-3" /> {t("cmd.globalSearch")}</span>
             </div>
           </motion.div>
         </motion.div>
