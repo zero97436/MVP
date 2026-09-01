@@ -3,8 +3,10 @@ import { Palette, Save, RotateCcw, CheckCircle2 } from "lucide-react";
 import { getBrandingSettings, saveBranding, resetBranding } from "../api/endpoints";
 import { Card, SectionTitle } from "./ui/Card";
 import { useBranding } from "../lib/branding";
+import { useI18n } from "../lib/i18n";
 
 export function BrandingPanel() {
+  const { t } = useI18n();
   const { reload } = useBranding();
   const [form, setForm] = useState({ display_name: "", tagline: "", logo_url: "", accent_color: "" });
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -30,10 +32,10 @@ export function BrandingPanel() {
         accent_color: form.accent_color || null,
       });
       reload();
-      setMsg({ ok: true, text: "Identité appliquée à toute l'interface." });
+      setMsg({ ok: true, text: t("brand.applied") });
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setMsg({ ok: false, text: detail ?? "Enregistrement impossible." });
+      setMsg({ ok: false, text: detail ?? t("brand.saveFail") });
     } finally {
       setBusy(false);
     }
@@ -43,36 +45,33 @@ export function BrandingPanel() {
     await resetBranding().catch(() => {});
     setForm({ display_name: "", tagline: "", logo_url: "", accent_color: "" });
     reload();
-    setMsg({ ok: true, text: "Identité Opsora restaurée." });
+    setMsg({ ok: true, text: t("brand.restored") });
   };
 
   return (
     <Card>
-      <SectionTitle title="Personnalisation de marque" icon={Palette} />
-      <p className="mb-3 text-xs text-ink-faint">
-        Plan <b>Professional</b> — nom, devise, logo et couleur d'accent appliqués à toute
-        l'interface (connexion, menu, page de statut publique, mode TV).
-      </p>
+      <SectionTitle title={t("brand.title")} icon={Palette} />
+      <p className="mb-3 text-xs text-ink-faint">{t("brand.intro")}</p>
       <form onSubmit={save} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <input placeholder="Nom affiché (ex. Supervision ACME)" value={form.display_name}
+        <input placeholder={t("brand.namePh")} value={form.display_name}
                onChange={(e) => setForm({ ...form, display_name: e.target.value })} className="input" />
-        <input placeholder="Devise (ex. Votre infra sous contrôle)" value={form.tagline}
+        <input placeholder={t("brand.taglinePh")} value={form.tagline}
                onChange={(e) => setForm({ ...form, tagline: e.target.value })} className="input" />
-        <input placeholder="URL du logo (https://… ou data:image/…)" value={form.logo_url}
+        <input placeholder={t("brand.logoPh")} value={form.logo_url}
                onChange={(e) => setForm({ ...form, logo_url: e.target.value })} className="input" />
         <div className="flex items-center gap-2">
-          <input placeholder="Couleur d'accent #RRGGBB" value={form.accent_color}
+          <input placeholder={t("brand.accentPh")} value={form.accent_color}
                  onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className="input flex-1" />
           <input type="color" value={form.accent_color || "#3B82F6"}
                  onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
-                 className="h-9 w-12 cursor-pointer rounded-lg border border-border bg-bg" title="Choisir la couleur" />
+                 className="h-9 w-12 cursor-pointer rounded-lg border border-border bg-bg" title={t("brand.pickColor")} />
         </div>
         <div className="flex items-center gap-2 sm:col-span-2">
           <button type="submit" disabled={busy} className="btn-primary">
-            <Save className="h-4 w-4" /> Appliquer
+            <Save className="h-4 w-4" /> {t("brand.apply")}
           </button>
           <button type="button" onClick={reset} className="btn-ghost">
-            <RotateCcw className="h-4 w-4" /> Restaurer Opsora
+            <RotateCcw className="h-4 w-4" /> {t("brand.restore")}
           </button>
         </div>
       </form>
