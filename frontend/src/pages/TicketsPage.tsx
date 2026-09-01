@@ -109,8 +109,8 @@ export default function TicketsPage() {
     <div className="space-y-6">
       <PageHeader
         helpTopic="tickets"
-        title="Tickets"
-        subtitle="Gestion des incidents ITSM — création, suivi et intégration externe"
+        titleKey="page.tickets.title"
+        subtitleKey="page.tickets.sub"
         actions={editable && (
           <button onClick={() => setShowForm((s) => !s)} className="btn-primary">
             <Plus className="h-4 w-4" /> {showForm ? "Annuler" : "Nouveau ticket"}
