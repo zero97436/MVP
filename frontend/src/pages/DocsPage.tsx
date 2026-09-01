@@ -4,8 +4,10 @@ import { BookOpen, Search } from "lucide-react";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Card } from "../components/ui/Card";
 import { DOC_SECTIONS } from "../lib/docs";
+import { useI18n } from "../lib/i18n";
 
 export default function DocsPage() {
+  const { t } = useI18n();
   const { hash } = useLocation();
   const [q, setQ] = useState("");
 
@@ -33,13 +35,13 @@ export default function DocsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Documentation" subtitle="Guide d'utilisation, section par section" />
+      <PageHeader title={t("docs.title")} subtitle={t("docs.subtitle")} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
         {/* Sommaire */}
         <aside className="lg:sticky lg:top-4 lg:self-start">
           <Card className="p-3">
-            <p className="mb-2 px-2 text-[11px] uppercase tracking-wide text-ink-faint">Sommaire</p>
+            <p className="mb-2 px-2 text-[11px] uppercase tracking-wide text-ink-faint">{t("docs.toc")}</p>
             <nav className="space-y-0.5">
               {DOC_SECTIONS.map((s) => (
                 <a
@@ -61,13 +63,13 @@ export default function DocsPage() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Rechercher dans la documentation…"
+              placeholder={t("docs.searchPh")}
               className="input w-full pl-9"
             />
           </div>
 
           {sections.length === 0 && (
-            <p className="text-sm text-ink-faint">Aucune section ne correspond à « {q} ».</p>
+            <p className="text-sm text-ink-faint">{t("docs.noneMatchPre")} {q} ».</p>
           )}
 
           {sections.map((s) => (
@@ -84,7 +86,7 @@ export default function DocsPage() {
               </div>
               {s.tips && s.tips.length > 0 && (
                 <div className="mt-3 rounded-lg border border-border bg-bg-soft/50 p-3">
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-faint">À savoir</p>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-faint">{t("docs.goodToKnow")}</p>
                   <ul className="list-disc space-y-1 pl-5 text-sm text-ink-soft">
                     {s.tips.map((t, i) => <li key={i}>{t}</li>)}
                   </ul>
