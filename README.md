@@ -1,5 +1,7 @@
 # Opsora
 
+**🇫🇷 Français** · [🇬🇧 English](README.en.md)
+
 <!-- Remplacer OWNER/REPO par le chemin GitHub réel une fois le dépôt poussé. -->
 [![CI](https://github.com/zero97436/MVP/actions/workflows/ci.yml/badge.svg)](https://github.com/zero97436/MVP/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
