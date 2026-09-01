@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "Opsora"
     DEBUG: bool = False
     API_PREFIX: str = "/api"
+    # Langue des contenus générés côté serveur (tickets auto, e-mails) : "fr" ou "en".
+    DEFAULT_LANGUAGE: str = "fr"
 
     # --- Database ---
     DATABASE_URL: str = "postgresql+psycopg2://supervision:supervision@db:5432/supervision"
