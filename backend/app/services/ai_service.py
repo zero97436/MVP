@@ -63,6 +63,16 @@ CHAT_PROMPT = (
 )
 
 
+_LANG_DIRECTIVE = {
+    "fr": "\n\nIMPORTANT : rédige TOUTE ta réponse en français.",
+    "en": "\n\nIMPORTANT: write your ENTIRE answer in English.",
+}
+
+
+def _lang_directive(lang: str) -> str:
+    return _LANG_DIRECTIVE.get(lang, _LANG_DIRECTIVE["fr"])
+
+
 class OllamaError(RuntimeError):
     pass
 
@@ -71,7 +81,7 @@ class AIService:
     def __init__(self, db: Session):
         self.db = db
 
-    def analyze_incident(self, alert_id: int) -> dict | None:
+    def analyze_incident(self, alert_id: int, lang: str = "fr") -> dict | None:
         from app.services.remediation_service import RemediationService
 
         alert = self.db.get(Alert, alert_id)
@@ -95,7 +105,7 @@ class AIService:
             f"en choisissant l'id le plus pertinent parmi {allowed_ids}."
         )
 
-        raw = self._chat(SYSTEM_PROMPT, context)
+        raw = self._chat(SYSTEM_PROMPT + _lang_directive(lang), context)
         analysis, suggested = self._extract_action(raw, allowed_ids, labels)
         if suggested is None:
             suggested = remediation.suggest(alert)
@@ -137,7 +147,7 @@ class AIService:
 
         return "\n".join(kept).strip(), suggested
 
-    def chat(self, question: str, history: list[dict] | None = None) -> dict:
+    def chat(self, question: str, history: list[dict] | None = None, lang: str = "fr") -> dict:
         snapshot = self._state_snapshot()
         system = CHAT_PROMPT.format(snapshot=snapshot)
 
@@ -156,6 +166,7 @@ class AIService:
         except Exception as exc:  # noqa: BLE001 — le RAG ne doit jamais casser le chat
             logger.debug("RAG ignoré : %s", exc)
 
+        system += _lang_directive(lang)
         messages = [{"role": "system", "content": system}]
         for msg in (history or [])[-6:]:
             role = msg.get("role")
@@ -363,7 +374,7 @@ class AIService:
 
         return "\n".join(lines)
 
-    def health_summary(self) -> dict:
+    def health_summary(self, lang: str = "fr") -> dict:
         from app.services.dashboard_service import DashboardService
 
         svc = DashboardService(self.db)
