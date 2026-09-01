@@ -24,7 +24,7 @@ from app.core.logging import get_logger
 
 logger = get_logger("ha")
 
-LOCK_KEY = "opsora:scheduler:leader"
+LOCK_KEY = "orbisys:scheduler:leader"
 # Le verrou expire après ~3 ticks manqués : bascule rapide mais sans « flapping ».
 LOCK_TTL_SECONDS = max(15, settings.SCHEDULER_INTERVAL_SECONDS * 3)
 
