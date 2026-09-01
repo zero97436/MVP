@@ -11,10 +11,12 @@ import { Card, SectionTitle } from "./ui/Card";
 import { useAuth } from "../lib/auth";
 import { canEdit } from "../lib/permissions";
 import { formatDate } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 
 const EMPTY = { host_id: 0, reason: "", starts_at: "", ends_at: "" };
 
 export function MaintenancePanel() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const editable = canEdit(user);
   const [items, setItems] = useState<Maintenance[]>([]);
@@ -49,7 +51,7 @@ export function MaintenancePanel() {
   };
 
   const remove = async (id: number) => {
-    if (confirm("Supprimer cette maintenance ?")) {
+    if (confirm(t("mnt.confirmDelete"))) {
       await deleteMaintenance(id);
       load();
     }
@@ -58,12 +60,12 @@ export function MaintenancePanel() {
   return (
     <Card>
       <SectionTitle
-        title="Maintenances planifiées"
+        title={t("mnt.title")}
         icon={Wrench}
         action={
           editable && (
             <button onClick={() => setShow((s) => !s)} className="btn-ghost px-2.5 py-1.5 text-xs">
-              <Plus className="h-3.5 w-3.5" /> {show ? "Annuler" : "Planifier"}
+              <Plus className="h-3.5 w-3.5" /> {show ? t("common.cancel") : t("mnt.schedule")}
             </button>
           )
         }
@@ -72,34 +74,34 @@ export function MaintenancePanel() {
       {show && editable && (
         <form onSubmit={submit} className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <select value={form.host_id} onChange={(e) => setForm({ ...form, host_id: Number(e.target.value) })} className="input">
-            <option value={0}>Toute la plateforme (global)</option>
+            <option value={0}>{t("mnt.wholePlatform")}</option>
             {hosts.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
           </select>
-          <input placeholder="Raison (ex. mise à jour)" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} className="input" />
-          <label className="flex flex-col gap-1 text-xs text-ink-faint">Début
+          <input placeholder={t("mnt.reasonPh")} value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} className="input" />
+          <label className="flex flex-col gap-1 text-xs text-ink-faint">{t("mnt.start")}
             <input type="datetime-local" required value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} className="input" />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-ink-faint">Fin
+          <label className="flex flex-col gap-1 text-xs text-ink-faint">{t("mnt.end")}
             <input type="datetime-local" required value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} className="input" />
           </label>
-          <button className="btn-primary sm:col-span-2">Planifier la maintenance</button>
+          <button className="btn-primary sm:col-span-2">{t("mnt.scheduleBtn")}</button>
         </form>
       )}
 
       {items.length === 0 ? (
-        <p className="py-4 text-center text-sm text-ink-faint">Aucune maintenance planifiée.</p>
+        <p className="py-4 text-center text-sm text-ink-faint">{t("mnt.none")}</p>
       ) : (
         <div className="space-y-2">
           {items.map((m) => (
             <div key={m.id} className="flex items-center gap-3 rounded-lg border border-border bg-bg-soft/50 px-3 py-2.5">
               {isActive(m) ? (
-                <span className="rounded-full bg-status-warning/15 px-2 py-0.5 text-xs text-status-warning">active</span>
+                <span className="rounded-full bg-status-warning/15 px-2 py-0.5 text-xs text-status-warning">{t("mnt.active")}</span>
               ) : (
-                <span className="rounded-full bg-bg px-2 py-0.5 text-xs text-ink-faint">planifiée</span>
+                <span className="rounded-full bg-bg px-2 py-0.5 text-xs text-ink-faint">{t("mnt.scheduled")}</span>
               )}
               <div className="min-w-0 flex-1">
                 <p className="text-sm text-ink">
-                  {m.host_id ? `Hôte : ${hostName.get(m.host_id) ?? m.host_id}` : "Global"}
+                  {m.host_id ? `${t("mnt.hostPrefix")} : ${hostName.get(m.host_id) ?? m.host_id}` : t("mnt.global")}
                   {m.reason ? ` — ${m.reason}` : ""}
                 </p>
                 <p className="text-xs text-ink-faint">{formatDate(m.starts_at)} → {formatDate(m.ends_at)}</p>
@@ -114,7 +116,7 @@ export function MaintenancePanel() {
         </div>
       )}
       <p className="mt-3 text-xs text-ink-faint">
-        Pendant une maintenance, les checks tournent toujours mais aucune alerte n'est ouverte ni notifiée.
+        {t("mnt.note")}
       </p>
     </Card>
   );
