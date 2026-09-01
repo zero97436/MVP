@@ -9,16 +9,18 @@ import { Card } from "../components/ui/Card";
 import { Loading, EmptyState } from "../components/States";
 import { cn } from "../lib/cn";
 import { timeAgo, formatDate } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 
+// label = clé i18n (ev.type.<x>), traduite au rendu.
 const TYPE_META: Record<string, { label: string; icon: LucideIcon }> = {
-  alert_opened: { label: "Alerte ouverte", icon: Bell },
-  alert_resolved: { label: "Alerte résolue", icon: CheckCheck },
-  alert_suppressed: { label: "Alerte supprimée (maintenance)", icon: BellOff },
-  alert_acknowledged: { label: "Incident acquitté", icon: CheckCheck },
-  alert_unacknowledged: { label: "Acquittement retiré", icon: Bell },
-  maintenance_created: { label: "Maintenance planifiée", icon: Wrench },
-  maintenance_deleted: { label: "Maintenance supprimée", icon: Wrench },
-  remediation: { label: "Remédiation", icon: Wand2 },
+  alert_opened: { label: "ev.type.alert_opened", icon: Bell },
+  alert_resolved: { label: "ev.type.alert_resolved", icon: CheckCheck },
+  alert_suppressed: { label: "ev.type.alert_suppressed", icon: BellOff },
+  alert_acknowledged: { label: "ev.type.alert_acknowledged", icon: CheckCheck },
+  alert_unacknowledged: { label: "ev.type.alert_unacknowledged", icon: Bell },
+  maintenance_created: { label: "ev.type.maintenance_created", icon: Wrench },
+  maintenance_deleted: { label: "ev.type.maintenance_deleted", icon: Wrench },
+  remediation: { label: "ev.type.remediation", icon: Wand2 },
 };
 
 const LEVEL_COLOR: Record<string, string> = {
@@ -27,17 +29,18 @@ const LEVEL_COLOR: Record<string, string> = {
   critical: "bg-status-critical/15 text-status-critical",
 };
 
-const FILTERS: { value: string; label: string }[] = [
-  { value: "", label: "Tous" },
-  { value: "alert_opened", label: "Alertes" },
-  { value: "alert_acknowledged", label: "Acquittements" },
-  { value: "maintenance_created", label: "Maintenances" },
-  { value: "remediation", label: "Remédiations" },
+const FILTERS: { value: string; labelKey: string }[] = [
+  { value: "", labelKey: "common.all" },
+  { value: "alert_opened", labelKey: "ev.f.alerts" },
+  { value: "alert_acknowledged", labelKey: "ev.f.acks" },
+  { value: "maintenance_created", labelKey: "ev.f.maintenance" },
+  { value: "remediation", labelKey: "ev.f.remediation" },
 ];
 
 const PAGE = 50;
 
 export default function EventsPage() {
+  const { t } = useI18n();
   const [events, setEvents] = useState<EventLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -72,27 +75,27 @@ export default function EventsPage() {
     const q = search.trim().toLowerCase();
     if (!q) return events;
     return events.filter((e) => {
-      const label = (TYPE_META[e.type]?.label ?? e.type).toLowerCase();
+      const label = (TYPE_META[e.type] ? t(TYPE_META[e.type].label) : e.type).toLowerCase();
       return e.message.toLowerCase().includes(q) || (e.actor ?? "").toLowerCase().includes(q) || label.includes(q);
     });
   }, [events, search]);
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Historique des événements" subtitle="Journal global : alertes, acquittements, maintenances, remédiations" />
+      <PageHeader titleKey="page.events.title" subtitleKey="page.events.sub" />
 
       {/* Recherche + niveau */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[220px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher (hôte, message, utilisateur…)" className="input w-full pl-9" />
+            placeholder={t("ev.searchPh")} className="input w-full pl-9" />
         </div>
         <select value={level} onChange={(e) => setLevel(e.target.value)} className="input">
-          <option value="">Tous niveaux</option>
-          <option value="info">Info</option>
-          <option value="warning">Avertissement</option>
-          <option value="critical">Critique</option>
+          <option value="">{t("ev.allLevels")}</option>
+          <option value="info">{t("ev.info")}</option>
+          <option value="warning">{t("ev.warning")}</option>
+          <option value="critical">{t("ev.critical")}</option>
         </select>
       </div>
 
@@ -106,7 +109,7 @@ export default function EventsPage() {
               filter === f.value ? "bg-brand text-white" : "text-ink-soft hover:text-ink",
             )}
           >
-            {f.label}
+            {t(f.labelKey)}
           </button>
         ))}
       </div>
@@ -114,7 +117,7 @@ export default function EventsPage() {
       {loading ? (
         <Loading />
       ) : shown.length === 0 ? (
-        <EmptyState message={search ? "Aucun événement ne correspond à la recherche." : "Aucun événement."} />
+        <EmptyState message={search ? t("ev.noneMatch") : t("ev.none")} />
       ) : (
         <Card className="p-0">
           <div className="divide-y divide-border">
@@ -128,7 +131,7 @@ export default function EventsPage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-ink">
-                      <span className="font-medium">{meta.label}</span>
+                      <span className="font-medium">{TYPE_META[e.type] ? t(meta.label) : e.type}</span>
                       {e.actor && e.actor !== "system" && <span className="text-ink-faint"> · {e.actor}</span>}
                     </p>
                     <p className="truncate text-xs text-ink-soft">{e.message}</p>
@@ -144,7 +147,7 @@ export default function EventsPage() {
             <button onClick={loadMore} disabled={loadingMore}
               className="flex w-full items-center justify-center gap-2 border-t border-border py-3 text-sm text-ink-soft hover:text-ink">
               {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronDown className="h-4 w-4" />}
-              Charger plus
+              {t("ev.loadMore")}
             </button>
           )}
         </Card>
