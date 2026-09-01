@@ -8,6 +8,7 @@ import { Card } from "../components/ui/Card";
 import { cn } from "../lib/cn";
 import { useAuth } from "../lib/auth";
 import { canEdit } from "../lib/permissions";
+import { useI18n } from "../lib/i18n";
 
 interface Msg {
   role: "user" | "assistant";
@@ -17,14 +18,10 @@ interface Msg {
   sources?: RagSource[];
 }
 
-const SUGGESTIONS = [
-  "Quels hôtes sont en incident ?",
-  "Le disque de mon PC est-il critique ?",
-  "Résume l'état de la plateforme.",
-  "Quels checks sont en WARNING ?",
-];
+const SUGGESTION_KEYS = ["chat.sug1", "chat.sug2", "chat.sug3", "chat.sug4"];
 
 export default function ChatPage() {
+  const { t } = useI18n();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -50,7 +47,7 @@ export default function ChatPage() {
     } catch (e: unknown) {
       const detail =
         (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Réponse impossible (IA injoignable ?).";
+        t("chat.noAnswer");
       setMessages((m) => [...m, { role: "assistant", content: `⚠️ ${detail}` }]);
     } finally {
       setLoading(false);
@@ -59,13 +56,13 @@ export default function ChatPage() {
 
   const applyFromPlan = async (index: number, plan: AiPlan) => {
     const hasDestructive = plan.operations.some((o) => o.destructive);
-    if (hasDestructive && !confirm("Ce plan contient des suppressions définitives. Confirmer ?")) return;
+    if (hasDestructive && !confirm(t("chat.confirmDestructive"))) return;
     setApplying(true);
     try {
       const { data } = await applyPlan(plan);
       setMessages((m) => m.map((msg, i) => (i === index ? { ...msg, plan: null, applied: data } : msg)));
     } catch {
-      setMessages((m) => [...m, { role: "assistant", content: "⚠️ Application impossible (droits insuffisants ?)." }]);
+      setMessages((m) => [...m, { role: "assistant", content: t("chat.applyFail") }]);
     } finally {
       setApplying(false);
     }
@@ -82,13 +79,13 @@ export default function ChatPage() {
               <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand/15 text-brand">
                 <Bot className="h-6 w-6" />
               </span>
-              <p className="text-sm text-ink-faint">Pose une question sur tes hôtes, checks ou incidents.</p>
+              <p className="text-sm text-ink-faint">{t("chat.emptyHint")}</p>
               <div className="flex flex-wrap justify-center gap-2">
-                {SUGGESTIONS.map((s) => (
+                {SUGGESTION_KEYS.map((k) => { const s = t(k); return (
                   <button key={s} onClick={() => send(s)} className="btn-ghost px-3 py-1.5 text-xs">
                     {s}
                   </button>
-                ))}
+                ); })}
               </div>
             </div>
           )}
@@ -113,7 +110,7 @@ export default function ChatPage() {
                 {/* Sources RAG citées par l'IA */}
                 {m.sources && m.sources.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-[11px] text-ink-faint">📚 Sources :</span>
+                    <span className="text-[11px] text-ink-faint">{t("chat.sources")}</span>
                     {m.sources.map((src) => (
                       <span key={src.id} className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] text-brand" title={`pertinence ${src.score}`}>
                         {src.title}
@@ -126,7 +123,7 @@ export default function ChatPage() {
                 {m.plan && (
                   <div className="rounded-xl border border-brand/30 bg-brand/5 p-3">
                     <p className="mb-2 flex items-center gap-2 text-sm font-medium text-ink">
-                      <Wand2 className="h-4 w-4 text-brand" /> Plan proposé ({m.plan.operations.length} opération·s)
+                      <Wand2 className="h-4 w-4 text-brand" /> {t("chat.planProposed")} ({m.plan.operations.length} {t("chat.operations")})
                     </p>
                     <ul className="mb-3 space-y-1.5">
                       {m.plan.operations.map((o, oi) => (
@@ -139,10 +136,10 @@ export default function ChatPage() {
                     {editable ? (
                       <button onClick={() => applyFromPlan(i, m.plan!)} disabled={applying} className="btn-primary px-3 py-1.5 text-xs">
                         {applying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-                        Appliquer le plan
+                        {t("chat.applyPlan")}
                       </button>
                     ) : (
-                      <p className="text-xs text-ink-faint">Rôle opérateur requis pour appliquer.</p>
+                      <p className="text-xs text-ink-faint">{t("chat.operatorRequired")}</p>
                     )}
                   </div>
                 )}
@@ -151,7 +148,7 @@ export default function ChatPage() {
                 {m.applied && (
                   <div className="rounded-xl border border-status-ok/30 bg-status-ok/10 p-3 text-sm">
                     <p className="mb-1 flex items-center gap-2 font-medium text-status-ok">
-                      <CheckCircle2 className="h-4 w-4" /> {m.applied.applied}/{m.applied.total} opération·s appliquée·s
+                      <CheckCircle2 className="h-4 w-4" /> {m.applied.applied}/{m.applied.total} {t("chat.opsApplied")}
                     </p>
                     <ul className="space-y-1">
                       {m.applied.results.map((r, ri) => (
@@ -169,7 +166,7 @@ export default function ChatPage() {
 
           {loading && (
             <div className="flex items-center gap-2 text-sm text-ink-faint">
-              <Loader2 className="h-4 w-4 animate-spin" /> L'assistant réfléchit…
+              <Loader2 className="h-4 w-4 animate-spin" /> {t("chat.thinking")}
             </div>
           )}
           <div ref={endRef} />
@@ -182,7 +179,7 @@ export default function ChatPage() {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ex : quel hôte est en critique ?"
+            placeholder={t("chat.inputPh")}
             className="input flex-1"
           />
           <button type="submit" disabled={loading || !input.trim()} className="btn-primary">
