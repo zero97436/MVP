@@ -7,16 +7,18 @@ import { Card, MotionGrid } from "../components/ui/Card";
 import { MetricCard } from "../components/ui/MetricCard";
 import { Loading } from "../components/States";
 import { cn } from "../lib/cn";
+import { useI18n } from "../lib/i18n";
 
 function stateMeta(c: DockerContainer): { color: string; label: string } {
   if (c.state === "running" && c.health === "unhealthy") return { color: "#EF4444", label: "Unhealthy" };
   if (c.state === "running") return { color: "#10B981", label: c.health === "healthy" ? "Healthy" : "Running" };
   if (c.state === "restarting") return { color: "#F59E0B", label: "Restarting" };
   if (c.state === "paused") return { color: "#F59E0B", label: "Paused" };
-  return { color: "#EF4444", label: c.state === "exited" ? "Arrêté" : c.state };
+  return { color: "#EF4444", label: c.state === "exited" ? "Stopped" : c.state };
 }
 
 export default function ContainersPage() {
+  const { t: tr } = useI18n();
   const [containers, setContainers] = useState<DockerContainer[]>([]);
   const [available, setAvailable] = useState(true);
   const [error, setError] = useState<string | undefined>();
@@ -64,7 +66,7 @@ export default function ContainersPage() {
         subtitleKey="page.containers.sub"
         actions={
           <button onClick={refresh} className="btn-ghost" disabled={refreshing}>
-            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} /> Actualiser
+            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} /> {tr("cont.refresh")}
           </button>
         }
       />
@@ -73,17 +75,17 @@ export default function ContainersPage() {
         <Card>
           <div className="flex flex-col items-center gap-3 py-12 text-center">
             <Container className="h-12 w-12 text-ink-faint" />
-            <p className="text-sm font-medium text-ink">Docker Engine injoignable</p>
+            <p className="text-sm font-medium text-ink">{tr("cont.unreachable")}</p>
             <p className="max-w-md text-xs text-ink-faint">{error}</p>
           </div>
         </Card>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <MetricCard label="Conteneurs" value={containers.length} icon={Box} accent="info" />
-            <MetricCard label="En fonctionnement" value={running} icon={CheckCircle2} accent="ok" />
-            <MetricCard label="Arrêtés" value={down} icon={AlertTriangle} accent={down ? "critical" : "neutral"} />
-            <MetricCard label="Instables" value={unhealthy} icon={AlertTriangle} accent={unhealthy ? "warning" : "neutral"} />
+            <MetricCard label={tr("cont.containers")} value={containers.length} icon={Box} accent="info" />
+            <MetricCard label={tr("cont.running")} value={running} icon={CheckCircle2} accent="ok" />
+            <MetricCard label={tr("cont.stoppedN")} value={down} icon={AlertTriangle} accent={down ? "critical" : "neutral"} />
+            <MetricCard label={tr("cont.unstable")} value={unhealthy} icon={AlertTriangle} accent={unhealthy ? "warning" : "neutral"} />
           </div>
 
           <MotionGrid className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -115,10 +117,7 @@ export default function ContainersPage() {
             })}
           </MotionGrid>
 
-          <p className="text-xs text-ink-faint">
-            Pour alerter : check type <code className="rounded bg-bg-soft px-1">docker</code> — sans config = flotte entière ;
-            avec <code className="rounded bg-bg-soft px-1">{'{"container": "nom"}'}</code> = conteneur précis (seuils CPU en option).
-          </p>
+          <p className="text-xs text-ink-faint">{tr("cont.note")}</p>
         </>
       )}
     </div>
