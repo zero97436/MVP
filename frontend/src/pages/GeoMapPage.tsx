@@ -94,8 +94,8 @@ export default function GeoMapPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Carte"
-        subtitle="Vue géographique — place tes équipements d'un clic sur la carte"
+        titleKey="page.geo.title"
+        subtitleKey="page.geo.sub"
         actions={
           <div className="flex items-center gap-2">
             <button onClick={locateMe} className="btn-ghost" title="Centrer sur ma position (GPS du navigateur)">
