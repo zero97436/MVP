@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useI18n } from "../lib/i18n";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -41,6 +42,7 @@ const LAYER_ORDER = ["Applications métier", "Back-Office", "Infrastructure", "G
 type XY = { x: number; y: number };
 
 export default function OperationsMapPage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const editable = canEdit(user);
 
@@ -75,7 +77,7 @@ export default function OperationsMapPage() {
   };
 
   useEffect(() => {
-    load().catch(() => setError("Impossible de charger la vue opérations")).finally(() => setLoading(false));
+    load().catch(() => setError(t("common.loadError"))).finally(() => setLoading(false));
   }, []);
 
   // Placement auto par couche (fallback quand pas de position enregistrée).
@@ -196,22 +198,22 @@ export default function OperationsMapPage() {
         subtitleKey="page.operations.sub"
         actions={
           <div className="flex items-center gap-2">
-            <StatusBadge status={overall} label={meta.label} />
+            <StatusBadge status={overall} />
             {editable && bam.length > 0 && !edit && (
               <button onClick={() => setEdit(true)} className="btn-ghost">
-                <Move className="h-4 w-4" /> Réorganiser
+                <Move className="h-4 w-4" /> {t("ops.reorganize")}
               </button>
             )}
             {edit && (
               <>
-                <button onClick={reset} disabled={saving} className="btn-ghost text-ink-faint" title="Revenir au placement automatique par couche">
-                  <RotateCcw className="h-4 w-4" /> Auto
+                <button onClick={reset} disabled={saving} className="btn-ghost text-ink-faint" title={t("ops.autoTitle")}>
+                  <RotateCcw className="h-4 w-4" /> {t("ops.auto")}
                 </button>
                 <button onClick={cancel} disabled={saving} className="btn-ghost">
-                  <X className="h-4 w-4" /> Annuler
+                  <X className="h-4 w-4" /> {t("common.cancel")}
                 </button>
                 <button onClick={save} disabled={saving || !dirty} className="btn-primary">
-                  <Save className="h-4 w-4" /> {saving ? "…" : "Enregistrer"}
+                  <Save className="h-4 w-4" /> {saving ? "…" : t("common.save")}
                 </button>
               </>
             )}
@@ -221,25 +223,25 @@ export default function OperationsMapPage() {
 
       {/* KPI */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <KpiTile label="Services métier OK" value={`${okServices}/${bam.length}`} icon={Briefcase} tone={koServices ? "critical" : "ok"} />
-        <KpiTile label="Santé des checks" value={formatPercent(checksHealth, 1)} icon={Activity} tone={checksHealth >= 99 ? "ok" : checksHealth >= 95 ? "warning" : "critical"} />
-        <KpiTile label="Hôtes en ligne" value={`${hostsUp}/${hosts.length}`} icon={Server} tone={hostsUp === hosts.length ? "ok" : "warning"} />
-        <KpiTile label="Incidents actifs" value={incidents.length} icon={AlertTriangle} tone={incidents.length ? "critical" : "ok"} />
+        <KpiTile label={t("ops.kpi.servicesOk")} value={`${okServices}/${bam.length}`} icon={Briefcase} tone={koServices ? "critical" : "ok"} />
+        <KpiTile label={t("ops.kpi.checksHealth")} value={formatPercent(checksHealth, 1)} icon={Activity} tone={checksHealth >= 99 ? "ok" : checksHealth >= 95 ? "warning" : "critical"} />
+        <KpiTile label={t("ops.kpi.hostsOnline")} value={`${hostsUp}/${hosts.length}`} icon={Server} tone={hostsUp === hosts.length ? "ok" : "warning"} />
+        <KpiTile label={t("ops.kpi.activeIncidents")} value={incidents.length} icon={AlertTriangle} tone={incidents.length ? "critical" : "ok"} />
       </div>
 
       {/* Carte */}
       <div className="card overflow-hidden p-0">
         <div className="relative flex items-center justify-between px-6 py-4" style={{ background: `linear-gradient(120deg, ${meta.color}22, transparent 70%)` }}>
           <div>
-            <h2 className="text-xl font-black tracking-tight" style={{ color: meta.color }}>OPÉRATIONS GLOBALES</h2>
+            <h2 className="text-xl font-black tracking-tight" style={{ color: meta.color }}>{t("ops.globalTitle")}</h2>
             <p className="text-xs uppercase tracking-[0.2em] text-ink-faint">
-              {summary.hosts_total} hôtes · {svcTotal} services · {bam.length} services métier
+              {summary.hosts_total} {t("ops.hostsWord")} · {svcTotal} {t("ops.servicesWord")} · {bam.length} {t("ops.bizServices")}
             </p>
           </div>
           {edit
-            ? <span className="rounded-full bg-brand/15 px-3 py-1.5 text-xs font-medium text-brand">✋ Mode édition — glissez les tuiles</span>
+            ? <span className="rounded-full bg-brand/15 px-3 py-1.5 text-xs font-medium text-brand">{t("ops.editMode")}</span>
             : <span className="hidden items-center gap-2 rounded-full bg-bg-soft px-3 py-1.5 text-xs text-ink-soft sm:flex">
-                <span className={cn("h-2 w-2 rounded-full", overall !== "OK" && "animate-pulse")} style={{ background: meta.color }} /> temps réel
+                <span className={cn("h-2 w-2 rounded-full", overall !== "OK" && "animate-pulse")} style={{ background: meta.color }} /> {t("ops.realtime")}
               </span>}
         </div>
 
@@ -281,7 +283,7 @@ export default function OperationsMapPage() {
       </div>
 
       <Card>
-        <SectionTitle title="Tendance de disponibilité — 24 h" icon={Activity} />
+        <SectionTitle title={t("ops.trend24")} icon={Activity} />
         <AvailabilityChart data={traffic} height={200} />
       </Card>
     </div>
@@ -357,16 +359,14 @@ function KpiTile({ label, value, icon: Icon, tone }: { label: string; value: str
 }
 
 function EmptyMap() {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
       <Boxes className="h-12 w-12 text-ink-faint" />
-      <p className="text-sm font-medium text-ink">Aucun service métier défini</p>
-      <p className="max-w-md text-xs text-ink-faint">
-        Créez vos services métier et rangez-les par couche. Ils s'afficheront ici en tuiles que vous
-        pourrez librement positionner.
-      </p>
+      <p className="text-sm font-medium text-ink">{t("ops.emptyTitle")}</p>
+      <p className="max-w-md text-xs text-ink-faint">{t("ops.emptyDesc")}</p>
       <Link to="/bam" className="btn-primary mt-1 px-4 py-2 text-sm">
-        <Briefcase className="h-4 w-4" /> Configurer les services métier
+        <Briefcase className="h-4 w-4" /> {t("ops.configure")}
       </Link>
     </div>
   );
