@@ -51,15 +51,17 @@ import { SystemHealthCard } from "../components/SystemHealthCard";
 import { changePassword } from "../api/endpoints";
 import { useAuth } from "../lib/auth";
 import { isAdmin } from "../lib/permissions";
+import { useI18n } from "../lib/i18n";
 
 const EMPTY_CHANNEL = { name: "", type: "webhook" as ChannelType, config_json: '{"url": ""}', escalation_only: false, active_hours: "" };
 const EMPTY_USER = { email: "", password: "", role: "viewer" };
-const BUILTIN_ROLE_LABEL: Record<string, string> = { admin: "Administrateur", operator: "Opérateur", viewer: "Lecteur" };
-const roleLabel = (name: string) => BUILTIN_ROLE_LABEL[name] ?? name;
+const BUILTIN_ROLE_KEY: Record<string, string> = { admin: "role.admin", operator: "role.operator", viewer: "role.viewer" };
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const admin = isAdmin(user);
+  const dispRole = (name: string) => (BUILTIN_ROLE_KEY[name] ? t(BUILTIN_ROLE_KEY[name]) : name);
 
   const [channels, setChannels] = useState<NotificationChannel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +82,7 @@ export default function SettingsPage() {
     setLoading(true);
     listChannels()
       .then((r) => setChannels(r.data))
-      .catch(() => setError("Erreur de chargement"))
+      .catch(() => setError(t("common.loadError")))
       .finally(() => setLoading(false));
     if (admin) {
       listUsers().then((r) => setUsers(r.data)).catch(() => {});
@@ -99,7 +101,7 @@ export default function SettingsPage() {
     setPurging(true);
     try {
       const { data } = await runRetention();
-      alert(`Purge terminée : ${data.total} ligne(s) supprimée(s).`);
+      alert(`${t("set.purgeDone")} : ${data.total} ${t("set.rowsDeleted")}`);
       getDbStats().then((r) => setStats(r.data)).catch(() => {});
     } finally {
       setPurging(false);
@@ -112,7 +114,7 @@ export default function SettingsPage() {
     try {
       config = JSON.parse(chForm.config_json || "{}");
     } catch {
-      alert("config_json invalide");
+      alert(t("set.badJson"));
       return;
     }
     await createChannel({
@@ -127,7 +129,7 @@ export default function SettingsPage() {
     e.preventDefault();
     setUserErr(null);
     if (userForm.password !== userConfirm) {
-      setUserErr("Les deux mots de passe ne correspondent pas.");
+      setUserErr(t("set.pwMismatch"));
       return;
     }
     try {
@@ -136,16 +138,16 @@ export default function SettingsPage() {
       setUserConfirm("");
       load();
     } catch {
-      setUserErr("Création impossible (email déjà utilisé ou mot de passe trop court).");
+      setUserErr(t("set.createUserFail"));
     }
   };
 
   const testCh = async (id: number) => {
     try {
       await testChannel(id);
-      alert("Notification de test envoyée ✅");
+      alert(t("set.testSent"));
     } catch {
-      alert("Échec de l'envoi — vérifie la configuration du canal (voir logs backend).");
+      alert(t("set.testFail"));
     }
   };
 
@@ -155,7 +157,7 @@ export default function SettingsPage() {
   };
 
   const removeUser = async (u: User) => {
-    if (confirm(`Supprimer l'utilisateur ${u.email} ?`)) {
+    if (confirm(`${t("set.confirmDeleteUser")} ${u.email} ?`)) {
       await deleteUser(u.id);
       load();
     }
@@ -163,7 +165,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Settings" subtitle="Canaux de notification, utilisateurs et préférences" />
+      <PageHeader titleKey="page.settings.title" subtitleKey="page.settings.sub" />
 
       <AccountCard />
 
@@ -174,19 +176,19 @@ export default function SettingsPage() {
       {/* Gestion des utilisateurs (admin) */}
       {admin && (
         <Card>
-          <SectionTitle title="Utilisateurs & rôles" icon={Users} />
+          <SectionTitle title={t("set.usersRoles")} icon={Users} />
           <form onSubmit={submitUser} className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-5">
             <input required type="email" placeholder="Email" value={userForm.email}
               onChange={(e) => setUserForm({ ...userForm, email: e.target.value })} className="input" />
-            <input required type="password" placeholder="Mot de passe (min 6)" value={userForm.password}
+            <input required type="password" placeholder={t("set.pwMin")} value={userForm.password}
               onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} className="input" />
-            <input required type="password" placeholder="Confirmer le mot de passe" value={userConfirm}
+            <input required type="password" placeholder={t("set.pwConfirm")} value={userConfirm}
               onChange={(e) => setUserConfirm(e.target.value)}
               className={`input ${userConfirm && userForm.password !== userConfirm ? "ring-1 ring-status-critical" : ""}`} />
             <select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value })} className="input">
-              {roles.map((r) => <option key={r.name} value={r.name}>{roleLabel(r.name)}</option>)}
+              {roles.map((r) => <option key={r.name} value={r.name}>{dispRole(r.name)}</option>)}
             </select>
-            <button className="btn-primary"><Plus className="h-4 w-4" /> Ajouter</button>
+            <button className="btn-primary"><Plus className="h-4 w-4" /> {t("common.add")}</button>
           </form>
           {userErr && <p className="mb-3 text-sm text-status-critical">{userErr}</p>}
 
@@ -195,16 +197,16 @@ export default function SettingsPage() {
               <div key={u.id} className="flex items-center gap-3 rounded-lg border border-border bg-bg-soft/50 px-3 py-2.5">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-ink">{u.email}</p>
-                  <p className="text-xs text-ink-faint">{u.is_active ? "actif" : "inactif"}</p>
+                  <p className="text-xs text-ink-faint">{u.is_active ? t("common.active") : t("common.inactive")}</p>
                 </div>
                 <select
                   value={u.role}
                   onChange={(e) => changeRole(u, e.target.value)}
                   disabled={u.id === user?.id}
                   className="input py-1.5 text-xs"
-                  title={u.id === user?.id ? "Vous ne pouvez pas changer votre propre rôle ici" : undefined}
+                  title={u.id === user?.id ? t("set.ownRole") : undefined}
                 >
-                  {roles.map((r) => <option key={r.name} value={r.name}>{roleLabel(r.name)}</option>)}
+                  {roles.map((r) => <option key={r.name} value={r.name}>{dispRole(r.name)}</option>)}
                 </select>
                 {u.id !== user?.id && (
                   <button onClick={() => removeUser(u)} className="text-status-critical/80 hover:text-status-critical">
@@ -224,19 +226,19 @@ export default function SettingsPage() {
       {admin && stats && (
         <Card>
           <SectionTitle
-            title="Base de données & rétention"
+            title={t("set.dbRetention")}
             icon={Database}
             action={
               <button onClick={purge} disabled={purging} className="btn-ghost px-3 py-1.5 text-xs">
-                <Eraser className="h-3.5 w-3.5" /> {purging ? "Purge..." : "Purger maintenant"}
+                <Eraser className="h-3.5 w-3.5" /> {purging ? t("set.purging") : t("set.purgeNow")}
               </button>
             }
           />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <RetentionStat label="Résultats de checks" stat={stats.check_results} days={stats.retention_days.check_results} />
-            <RetentionStat label="Métriques (brut)" stat={stats.host_metrics} days={stats.retention_days.host_metrics} />
-            <RetentionStat label="Métriques (horaire)" stat={stats.host_metrics_hourly} days={stats.retention_days.host_metrics_hourly} />
-            <RetentionStat label="Alertes" stat={stats.alerts} days={stats.retention_days.resolved_alerts} />
+            <RetentionStat label={t("set.ret.checkResults")} stat={stats.check_results} days={stats.retention_days.check_results} />
+            <RetentionStat label={t("set.ret.metricsRaw")} stat={stats.host_metrics} days={stats.retention_days.host_metrics} />
+            <RetentionStat label={t("set.ret.metricsHourly")} stat={stats.host_metrics_hourly} days={stats.retention_days.host_metrics_hourly} />
+            <RetentionStat label={t("set.ret.alerts")} stat={stats.alerts} days={stats.retention_days.resolved_alerts} />
           </div>
           <p className="mt-3 text-xs text-ink-faint">
             La purge automatique tourne via le scheduler ; les données au-delà de la fenêtre
@@ -247,36 +249,36 @@ export default function SettingsPage() {
 
       {/* Canaux de notification */}
       <Card>
-        <SectionTitle title="Canaux de notification" />
+        <SectionTitle title={t("set.channels")} />
         {admin ? (
           <form onSubmit={submitChannel} className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <input required placeholder="Nom" value={chForm.name} onChange={(e) => setChForm({ ...chForm, name: e.target.value })} className="input" />
             <select
               value={chForm.type}
               onChange={(e) => {
-                const t = e.target.value as ChannelType;
-                setChForm({ ...chForm, type: t, config_json: CHANNEL_PLACEHOLDER[t] });
+                const ct = e.target.value as ChannelType;
+                setChForm({ ...chForm, type: ct, config_json: CHANNEL_PLACEHOLDER[ct] });
               }}
               className="input"
             >
-              {CHANNEL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              {CHANNEL_TYPES.map((ct) => <option key={ct} value={ct}>{ct}</option>)}
             </select>
             <input placeholder={CHANNEL_PLACEHOLDER[chForm.type]} value={chForm.config_json} onChange={(e) => setChForm({ ...chForm, config_json: e.target.value })} className="input font-mono" />
             <label className="flex items-center gap-2 text-sm text-ink-soft">
               <input type="checkbox" checked={chForm.escalation_only} onChange={(e) => setChForm({ ...chForm, escalation_only: e.target.checked })} />
-              Escalade uniquement (astreinte)
+              {t("set.escalationOnly")}
             </label>
-            <input placeholder="Plage horaire ex. 08:00-20:00 (vide = 24/7)" value={chForm.active_hours} onChange={(e) => setChForm({ ...chForm, active_hours: e.target.value })} className="input sm:col-span-2" />
-            <button className="btn-primary sm:col-span-3"><Plus className="h-4 w-4" /> Ajouter le canal</button>
+            <input placeholder={t("set.activeHoursPh")} value={chForm.active_hours} onChange={(e) => setChForm({ ...chForm, active_hours: e.target.value })} className="input sm:col-span-2" />
+            <button className="btn-primary sm:col-span-3"><Plus className="h-4 w-4" /> {t("set.addChannel")}</button>
           </form>
         ) : (
           <p className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-bg-soft/50 p-3 text-sm text-ink-faint">
-            <ShieldAlert className="h-4 w-4" /> Seul un administrateur peut configurer les canaux.
+            <ShieldAlert className="h-4 w-4" /> {t("set.adminOnlyChannels")}
           </p>
         )}
 
         {loading ? <Loading /> : error ? <ErrorState message={error} /> :
-          channels.length === 0 ? <EmptyState message="Aucun canal configuré." /> : (
+          channels.length === 0 ? <EmptyState message={t("set.noChannels")} /> : (
           <div className="space-y-2">
             {channels.map((ch) => {
               const Icon = CHANNEL_ICON[ch.type] ?? Webhook;
@@ -288,7 +290,7 @@ export default function SettingsPage() {
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-2 text-sm font-medium text-ink">
                       {ch.name}
-                      {ch.escalation_only && <span className="rounded bg-status-warning/15 px-1.5 py-0.5 text-[10px] text-status-warning">astreinte</span>}
+                      {ch.escalation_only && <span className="rounded bg-status-warning/15 px-1.5 py-0.5 text-[10px] text-status-warning">{t("set.onCall")}</span>}
                       {ch.active_hours && <span className="rounded bg-bg px-1.5 py-0.5 text-[10px] text-ink-faint">{ch.active_hours}</span>}
                     </p>
                     <p className="truncate font-mono text-xs text-ink-faint">{JSON.stringify(ch.config_json)}</p>
@@ -296,7 +298,7 @@ export default function SettingsPage() {
                   <span className="rounded-full bg-bg px-2 py-0.5 text-xs text-ink-soft">{ch.type}</span>
                   {admin && (
                     <button onClick={() => testCh(ch.id)} className="btn-ghost px-2.5 py-1.5 text-xs">
-                      <Send className="h-3.5 w-3.5" /> Tester
+                      <Send className="h-3.5 w-3.5" /> {t("common.test")}
                     </button>
                   )}
                 </div>
@@ -307,7 +309,7 @@ export default function SettingsPage() {
       </Card>
 
       <p className="text-sm text-ink-faint">
-        SMTP et autres secrets sont configurés via variables d'environnement (voir .env).
+        {t("set.smtpNote")}
       </p>
     </div>
   );
@@ -322,12 +324,13 @@ function RetentionStat({
   stat: { count: number; oldest: string | null };
   days: number;
 }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-lg border border-border bg-bg-soft/50 p-3">
       <p className="text-xs uppercase tracking-wide text-ink-faint">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">{stat.count.toLocaleString()}</p>
       <p className="mt-1 text-xs text-ink-faint">
-        rétention {days} j · plus ancien : {stat.oldest ? formatDate(stat.oldest) : "—"}
+        {t("set.retentionWord")} {days} {t("set.daysShort")} · {t("set.oldest")} : {stat.oldest ? formatDate(stat.oldest) : "—"}
       </p>
     </div>
   );
@@ -335,6 +338,7 @@ function RetentionStat({
 
 function AccountCard() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [cur, setCur] = useState("");
   const [pw, setPw] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -344,29 +348,29 @@ function AccountCard() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMsg(null);
-    if (pw !== confirm) { setMsg({ ok: false, text: "Les deux mots de passe ne correspondent pas." }); return; }
-    if (pw.length < 6) { setMsg({ ok: false, text: "Le mot de passe doit faire au moins 6 caractères." }); return; }
+    if (pw !== confirm) { setMsg({ ok: false, text: t("acc.pwMismatch") }); return; }
+    if (pw.length < 6) { setMsg({ ok: false, text: t("acc.pwTooShort") }); return; }
     setBusy(true);
     try {
       await changePassword(cur, pw);
-      setMsg({ ok: true, text: "Mot de passe modifié ✅" });
+      setMsg({ ok: true, text: t("acc.pwChanged") });
       setCur(""); setPw(""); setConfirm("");
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setMsg({ ok: false, text: detail ?? "Modification impossible." });
+      setMsg({ ok: false, text: detail ?? t("acc.changeFail") });
     } finally { setBusy(false); }
   };
 
   return (
     <Card>
-      <SectionTitle title="Mon compte" icon={KeyRound} />
-      <p className="mb-3 text-xs text-ink-faint">Connecté en tant que <b className="text-ink-soft">{user?.email}</b> ({user?.role}).</p>
+      <SectionTitle title={t("acc.title")} icon={KeyRound} />
+      <p className="mb-3 text-xs text-ink-faint">{t("acc.connectedAs")} <b className="text-ink-soft">{user?.email}</b> ({user?.role}).</p>
       <form onSubmit={submit} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <input required type="password" placeholder="Mot de passe actuel" value={cur} onChange={(e) => setCur(e.target.value)} className="input" autoComplete="current-password" />
-        <input required type="password" placeholder="Nouveau mot de passe" value={pw} onChange={(e) => setPw(e.target.value)} className="input" autoComplete="new-password" />
-        <input required type="password" placeholder="Confirmer le nouveau" value={confirm} onChange={(e) => setConfirm(e.target.value)}
+        <input required type="password" placeholder={t("acc.currentPw")} value={cur} onChange={(e) => setCur(e.target.value)} className="input" autoComplete="current-password" />
+        <input required type="password" placeholder={t("acc.newPw")} value={pw} onChange={(e) => setPw(e.target.value)} className="input" autoComplete="new-password" />
+        <input required type="password" placeholder={t("acc.confirmNew")} value={confirm} onChange={(e) => setConfirm(e.target.value)}
                className={`input ${confirm && pw !== confirm ? "ring-1 ring-status-critical" : ""}`} autoComplete="new-password" />
-        <button disabled={busy} className="btn-primary sm:col-span-3">Changer mon mot de passe</button>
+        <button disabled={busy} className="btn-primary sm:col-span-3">{t("acc.changeMyPw")}</button>
       </form>
       {msg && <p className={`mt-2 text-sm ${msg.ok ? "text-status-ok" : "text-status-critical"}`}>{msg.text}</p>}
     </Card>
@@ -375,6 +379,7 @@ function AccountCard() {
 
 // --- Rôles personnalisés : droits de modification par section ---
 function RolesCard({ roles, sections, onChange }: { roles: RoleDef[]; sections: RoleSection[]; onChange: () => void }) {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [perms, setPerms] = useState<string[]>([]);
@@ -397,7 +402,7 @@ function RolesCard({ roles, sections, onChange }: { roles: RoleDef[]; sections: 
       onChange();
     } catch (e2: unknown) {
       const detail = (e2 as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setErr(detail ?? "Enregistrement impossible.");
+      setErr(detail ?? t("roles.saveFail"));
     }
   };
 
@@ -407,7 +412,7 @@ function RolesCard({ roles, sections, onChange }: { roles: RoleDef[]; sections: 
   const cancel = () => { setEditing(null); setName(""); setDesc(""); setPerms([]); setErr(null); };
 
   const remove = async (r: RoleDef) => {
-    if (confirm(`Supprimer le rôle « ${r.name} » ? Les utilisateurs concernés repasseront en lecture seule.`)) {
+    if (confirm(`${t("roles.confirmDelete")} « ${r.name} »${t("roles.confirmDeleteTail")}`)) {
       await deleteRole(r.id!);
       onChange();
     }
@@ -417,18 +422,17 @@ function RolesCard({ roles, sections, onChange }: { roles: RoleDef[]; sections: 
 
   return (
     <Card>
-      <SectionTitle title="Rôles personnalisés" icon={ShieldCheck} />
+      <SectionTitle title={t("roles.title")} icon={ShieldCheck} />
       <p className="mb-3 text-xs text-ink-faint">
-        Créez un profil avec des droits de modification à la carte. La lecture reste ouverte à tout compte ;
-        les cases cochées autorisent la <b>création / modification / suppression</b> dans la section.
+        {t("roles.intro")}
       </p>
 
       <form onSubmit={submit} className="mb-4 space-y-3 rounded-lg border border-border bg-bg-soft/40 p-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <input required placeholder="Nom du rôle (ex. superviseur-réseau)" value={name}
+          <input required placeholder={t("roles.namePh")} value={name}
             disabled={!!editing}
             onChange={(e) => setName(e.target.value)} className="input" />
-          <input placeholder="Description (optionnel)" value={desc}
+          <input placeholder={t("roles.descPh")} value={desc}
             onChange={(e) => setDesc(e.target.value)} className="input" />
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -442,14 +446,14 @@ function RolesCard({ roles, sections, onChange }: { roles: RoleDef[]; sections: 
         {err && <p className="text-sm text-status-critical">{err}</p>}
         <div className="flex gap-2">
           <button className="btn-primary">
-            {editing ? <><Check className="h-4 w-4" /> Enregistrer</> : <><Plus className="h-4 w-4" /> Créer le rôle</>}
+            {editing ? <><Check className="h-4 w-4" /> {t("common.save")}</> : <><Plus className="h-4 w-4" /> {t("roles.createRole")}</>}
           </button>
-          {editing && <button type="button" onClick={cancel} className="btn-ghost"><X className="h-4 w-4" /> Annuler</button>}
+          {editing && <button type="button" onClick={cancel} className="btn-ghost"><X className="h-4 w-4" /> {t("common.cancel")}</button>}
         </div>
       </form>
 
       {custom.length === 0 ? (
-        <p className="text-sm text-ink-faint">Aucun rôle personnalisé pour l'instant.</p>
+        <p className="text-sm text-ink-faint">{t("roles.none")}</p>
       ) : (
         <div className="space-y-2">
           {custom.map((r) => (
@@ -459,15 +463,15 @@ function RolesCard({ roles, sections, onChange }: { roles: RoleDef[]; sections: 
                 {r.description && <p className="text-xs text-ink-faint">{r.description}</p>}
                 <div className="mt-1.5 flex flex-wrap gap-1">
                   {r.permissions.length === 0
-                    ? <span className="text-xs text-ink-faint">Lecture seule</span>
+                    ? <span className="text-xs text-ink-faint">{t("roles.readOnly")}</span>
                     : r.permissions.map((p) => {
                         const lbl = sections.find((s) => s.key === p)?.label ?? p;
                         return <span key={p} className="rounded bg-brand/10 px-1.5 py-0.5 text-[11px] text-brand">{lbl}</span>;
                       })}
                 </div>
               </div>
-              <button onClick={() => startEdit(r)} className="text-ink-soft hover:text-ink" title="Modifier"><Pencil className="h-4 w-4" /></button>
-              <button onClick={() => remove(r)} className="text-status-critical/80 hover:text-status-critical" title="Supprimer"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => startEdit(r)} className="text-ink-soft hover:text-ink" title={t("common.edit")}><Pencil className="h-4 w-4" /></button>
+              <button onClick={() => remove(r)} className="text-status-critical/80 hover:text-status-critical" title={t("common.delete")}><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
         </div>
