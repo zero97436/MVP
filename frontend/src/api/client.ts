@@ -6,12 +6,16 @@ export const api = axios.create({
   baseURL: "/api",
 });
 
-// Injecte le JWT dans chaque requête.
+// Injecte le JWT + la langue choisie (Accept-Language) dans chaque requête.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  try {
+    const lang = localStorage.getItem("opsora_lang");
+    if (lang === "fr" || lang === "en") config.headers["Accept-Language"] = lang;
+  } catch { /* localStorage indisponible */ }
   return config;
 });
 
