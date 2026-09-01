@@ -118,7 +118,7 @@ async def audit_middleware(request, call_next):
     return response
 
 
-# --- Auto-instrumentation APM (Opsora se supervise lui-même) ---
+# --- Auto-instrumentation APM (Orbisys se supervise lui-même) ---
 # Accumule requêtes/erreurs/latence en mémoire et flush en base toutes les ~30 s.
 _apm_buf = {"requests": 0, "errors": 0, "latency_sum": 0.0, "since": time.monotonic()}
 
@@ -151,7 +151,7 @@ def _flush_apm() -> None:
     try:
         with SessionLocal() as db:
             ApmService(db).ingest(
-                app_name="opsora", requests=reqs, errors=errs, latency_ms=lat,
+                app_name="orbisys", requests=reqs, errors=errs, latency_ms=lat,
             )
     except Exception as exc:  # noqa: BLE001 — l'APM ne doit jamais casser l'API
         logger.debug("Flush APM interne ignoré : %s", exc)
