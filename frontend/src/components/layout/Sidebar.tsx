@@ -28,35 +28,36 @@ import {
 import { cn } from "../../lib/cn";
 import { BrandLogo } from "../ui/BrandLogo";
 import { useBranding } from "../../lib/branding";
+import { useI18n } from "../../lib/i18n";
 
 interface NavItem {
   to: string;
-  label: string;
+  labelKey: string;
   icon: LucideIcon;
 }
 
 const NAV: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/monitoring", label: "Monitoring", icon: Activity },
-  { to: "/hosts", label: "Hosts", icon: Server },
-  { to: "/checks", label: "Checks", icon: ListChecks },
-  { to: "/templates", label: "Templates", icon: LayoutTemplate },
-  { to: "/incidents", label: "Incidents", icon: AlertTriangle },
-  { to: "/tickets", label: "Tickets", icon: Ticket },
-  { to: "/apm", label: "APM", icon: Rocket },
-  { to: "/containers", label: "Conteneurs", icon: Container },
-  { to: "/topology", label: "Topology", icon: Share2 },
-  { to: "/geo", label: "Carte", icon: MapPin },
-  { to: "/operations", label: "Opérations", icon: LayoutGrid },
-  { to: "/bam", label: "Métier", icon: Briefcase },
-  { to: "/reports", label: "Reports", icon: FileBarChart },
-  { to: "/events", label: "Événements", icon: History },
-  { to: "/audit", label: "Audit", icon: ShieldCheck },
-  { to: "/assistant", label: "Assistant", icon: Bot },
-  { to: "/knowledge", label: "Connaissances", icon: BookOpen },
-  { to: "/tenants", label: "Tenants", icon: Building2 },
-  { to: "/settings", label: "Settings", icon: Settings },
-  { to: "/docs", label: "Documentation", icon: LifeBuoy },
+  { to: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
+  { to: "/monitoring", labelKey: "nav.monitoring", icon: Activity },
+  { to: "/hosts", labelKey: "nav.hosts", icon: Server },
+  { to: "/checks", labelKey: "nav.checks", icon: ListChecks },
+  { to: "/templates", labelKey: "nav.templates", icon: LayoutTemplate },
+  { to: "/incidents", labelKey: "nav.incidents", icon: AlertTriangle },
+  { to: "/tickets", labelKey: "nav.tickets", icon: Ticket },
+  { to: "/apm", labelKey: "nav.apm", icon: Rocket },
+  { to: "/containers", labelKey: "nav.containers", icon: Container },
+  { to: "/topology", labelKey: "nav.topology", icon: Share2 },
+  { to: "/geo", labelKey: "nav.map", icon: MapPin },
+  { to: "/operations", labelKey: "nav.operations", icon: LayoutGrid },
+  { to: "/bam", labelKey: "nav.business", icon: Briefcase },
+  { to: "/reports", labelKey: "nav.reports", icon: FileBarChart },
+  { to: "/events", labelKey: "nav.events", icon: History },
+  { to: "/audit", labelKey: "nav.audit", icon: ShieldCheck },
+  { to: "/assistant", labelKey: "nav.assistant", icon: Bot },
+  { to: "/knowledge", labelKey: "nav.knowledge", icon: BookOpen },
+  { to: "/tenants", labelKey: "nav.tenants", icon: Building2 },
+  { to: "/settings", labelKey: "nav.settings", icon: Settings },
+  { to: "/docs", labelKey: "nav.docs", icon: LifeBuoy },
 ];
 
 export function Sidebar({
@@ -67,6 +68,7 @@ export function Sidebar({
   onToggle: () => void;
 }) {
   const { branding } = useBranding();
+  const { t } = useI18n();
   return (
     <motion.aside
       animate={{ width: collapsed ? 72 : 240 }}
@@ -85,11 +87,12 @@ export function Sidebar({
       <nav className="mt-2 flex-1 space-y-1 px-3">
         {NAV.map((item) => {
           const Icon = item.icon;
+          const label = t(item.labelKey);
           return (
             <NavLink
               key={item.to}
               to={item.to}
-              title={collapsed ? item.label : undefined}
+              title={collapsed ? label : undefined}
               className={({ isActive }) =>
                 cn(
                   "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition",
@@ -100,7 +103,7 @@ export function Sidebar({
               }
             >
               <Icon className="h-[18px] w-[18px] shrink-0" />
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              {!collapsed && <span className="truncate">{label}</span>}
             </NavLink>
           );
         })}
@@ -109,7 +112,7 @@ export function Sidebar({
       <button
         onClick={onToggle}
         className="m-3 flex items-center justify-center rounded-lg border border-border py-2 text-ink-faint transition hover:text-ink"
-        title={collapsed ? "Déplier" : "Réduire"}
+        title={collapsed ? t("topbar.expand") : t("topbar.collapse")}
       >
         <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
       </button>
