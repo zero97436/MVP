@@ -15,7 +15,7 @@ def _configure(monkeypatch, email="jane@acme.fr", name="Jane Doe", verified=True
     from app.core.config import settings as cfg
 
     monkeypatch.setattr(cfg, "OIDC_ISSUER", "https://idp.acme.fr")
-    monkeypatch.setattr(cfg, "OIDC_CLIENT_ID", "opsora")
+    monkeypatch.setattr(cfg, "OIDC_CLIENT_ID", "orbisys")
     monkeypatch.setattr(cfg, "OIDC_CLIENT_SECRET", "s3cret")
     monkeypatch.setattr("app.api.routes.sso._discover", lambda issuer: CONF)
     monkeypatch.setattr("app.api.routes.sso._exchange_code",
@@ -40,14 +40,14 @@ def test_sso_login_redirects_to_provider(client, monkeypatch):
     url = urlparse(r.headers["location"])
     assert url.netloc == "idp.acme.fr" and url.path == "/authorize"
     q = parse_qs(url.query)
-    assert q["client_id"] == ["opsora"]
+    assert q["client_id"] == ["orbisys"]
     assert q["response_type"] == ["code"]
     assert "state" in q and "openid" in q["scope"][0]
 
 
 def test_sso_callback_creates_user_and_logs_in(client, db, monkeypatch):
     _configure(monkeypatch, email="Nouvelle@Acme.fr", name="Nouvelle Recrue")
-    state = _make_state("https://opsora.acme.fr/api/auth/sso/callback")
+    state = _make_state("https://orbisys.acme.fr/api/auth/sso/callback")
     r = client.get("/api/auth/sso/callback", params={"code": "abc", "state": state},
                    follow_redirects=False)
     assert r.status_code == 302
