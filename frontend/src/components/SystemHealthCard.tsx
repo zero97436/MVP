@@ -3,6 +3,7 @@ import { getSystemHealth, type SystemHealth } from "../api/endpoints";
 import { usePolling } from "../hooks/usePolling";
 import { Card, SectionTitle } from "./ui/Card";
 import { cn } from "../lib/cn";
+import { useI18n } from "../lib/i18n";
 
 const META: Record<string, { label: string; icon: typeof Database }> = {
   database: { label: "PostgreSQL", icon: Database },
@@ -11,27 +12,28 @@ const META: Record<string, { label: string; icon: typeof Database }> = {
   scheduler: { label: "Scheduler", icon: Workflow },
 };
 
-function detail(name: string, c: { ok: boolean; [k: string]: unknown }): string {
+function detail(name: string, c: { ok: boolean; [k: string]: unknown }, t: (k: string) => string): string {
   if (name === "database" && c.latency_ms != null) return `${c.latency_ms} ms`;
-  if (name === "celery_workers") return `${c.count ?? 0} actif(s)`;
-  if (name === "scheduler" && c.last_result_age_seconds != null) return `dernier résultat il y a ${c.last_result_age_seconds}s`;
+  if (name === "celery_workers") return `${c.count ?? 0} ${t("sys.active")}`;
+  if (name === "scheduler" && c.last_result_age_seconds != null) return `${t("sys.lastResultAgo")} ${c.last_result_age_seconds}s`;
   if (!c.ok && c.error) return String(c.error);
-  return c.ok ? "OK" : "indisponible";
+  return c.ok ? "OK" : t("sys.unavailable");
 }
 
 export function SystemHealthCard() {
+  const { t } = useI18n();
   const { data } = usePolling<SystemHealth>(() => getSystemHealth().then((r) => r.data), 15000);
   if (!data) return null;
 
   return (
     <Card>
       <SectionTitle
-        title="Santé de la plateforme"
+        title={t("sys.title")}
         icon={Activity}
         action={
           <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium",
             data.status === "ok" ? "bg-status-ok/15 text-status-ok" : "bg-status-critical/15 text-status-critical")}>
-            {data.status === "ok" ? "Tout est opérationnel" : "Dégradé"}
+            {data.status === "ok" ? t("sys.allOk") : t("sys.degraded")}
           </span>
         }
       />
@@ -44,7 +46,7 @@ export function SystemHealthCard() {
               <Icon className="h-4 w-4 text-ink-soft" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-ink">{m.label}</p>
-                <p className="truncate text-xs text-ink-faint">{detail(name, c)}</p>
+                <p className="truncate text-xs text-ink-faint">{detail(name, c, t)}</p>
               </div>
               {c.ok
                 ? <CheckCircle2 className="h-4 w-4 text-status-ok" />
