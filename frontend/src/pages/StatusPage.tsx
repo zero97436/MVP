@@ -5,6 +5,7 @@ import { BrandLogo } from "../components/ui/BrandLogo";
 import { useBranding } from "../lib/branding";
 import { api } from "../api/client";
 import { cn } from "../lib/cn";
+import { useI18n } from "../lib/i18n";
 
 interface PublicService {
   name: string;
@@ -20,20 +21,18 @@ interface PublicStatus {
 }
 
 const META = {
-  OK: { color: "#10B981", icon: CheckCircle2, label: "Opérationnel" },
-  WARNING: { color: "#F59E0B", icon: AlertTriangle, label: "Dégradé" },
-  CRITICAL: { color: "#EF4444", icon: XCircle, label: "Incident en cours" },
-  UNKNOWN: { color: "#64748B", icon: HelpCircle, label: "Inconnu" },
+  OK: { color: "#10B981", icon: CheckCircle2, label: "st.label.OK" },
+  WARNING: { color: "#F59E0B", icon: AlertTriangle, label: "st.label.WARNING" },
+  CRITICAL: { color: "#EF4444", icon: XCircle, label: "st.label.CRITICAL" },
+  UNKNOWN: { color: "#64748B", icon: HelpCircle, label: "st.label.UNKNOWN" },
 } as const;
 
 const BANNER = {
-  OK: "Tous les services sont opérationnels",
-  WARNING: "Dégradation en cours sur certains services",
-  CRITICAL: "Incident en cours",
-  UNKNOWN: "État indéterminé",
+  OK: "st.banner.OK", WARNING: "st.banner.WARNING", CRITICAL: "st.banner.CRITICAL", UNKNOWN: "st.banner.UNKNOWN",
 } as const;
 
 export default function StatusPage() {
+  const { t } = useI18n();
   const { branding } = useBranding();
   const [data, setData] = useState<PublicStatus | null>(null);
   const [error, setError] = useState(false);
@@ -61,7 +60,7 @@ export default function StatusPage() {
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg text-ink-soft">
-        Page de statut indisponible.
+        {t("st.unavailable")}
       </div>
     );
   }
@@ -86,7 +85,7 @@ export default function StatusPage() {
           </div>
           {updatedAt && (
             <span className="text-xs text-ink-faint">
-              mis à jour à {updatedAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+              {t("st.updatedAt")} {updatedAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
             </span>
           )}
         </div>
@@ -102,16 +101,16 @@ export default function StatusPage() {
             <meta.icon className="h-6 w-6" />
           </span>
           <div>
-            <p className="text-xl font-bold" style={{ color: meta.color }}>{BANNER[data.overall]}</p>
+            <p className="text-xl font-bold" style={{ color: meta.color }}>{t(BANNER[data.overall])}</p>
             <p className="text-sm text-ink-soft">
-              {data.services.length} service(s) surveillé(s) en continu
+              {data.services.length} {t("st.servicesMonitored")}
             </p>
           </div>
         </motion.div>
 
         {/* Services par catégorie */}
         {groups.length === 0 ? (
-          <p className="py-10 text-center text-sm text-ink-faint">Aucun service publié pour le moment.</p>
+          <p className="py-10 text-center text-sm text-ink-faint">{t("st.noService")}</p>
         ) : (
           groups.map(([category, services]) => (
             <div key={category} className="card overflow-hidden p-0">
@@ -129,7 +128,7 @@ export default function StatusPage() {
                       </div>
                       <span className="flex shrink-0 items-center gap-2 text-xs font-medium" style={{ color: m.color }}>
                         <span className={cn("h-2 w-2 rounded-full", s.status !== "OK" && "animate-pulse")} style={{ background: m.color }} />
-                        {m.label}
+                        {t(m.label)}
                       </span>
                     </div>
                   );
@@ -140,7 +139,7 @@ export default function StatusPage() {
         )}
 
         <p className="pt-4 text-center text-xs text-ink-faint">
-          Actualisation automatique toutes les 30 s · propulsé par {branding.display_name}
+          {t("st.autoRefresh")} {branding.display_name}
         </p>
       </div>
     </div>
