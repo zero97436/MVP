@@ -63,8 +63,8 @@ export default function ApmPage() {
     <div className="space-y-6">
       <PageHeader
         helpTopic="apm"
-        title="APM"
-        subtitle="Supervision applicative — débit, erreurs et latence des applications"
+        titleKey="page.apm.title"
+        subtitleKey="page.apm.sub"
         actions={
           <button onClick={refresh} className="btn-ghost" disabled={refreshing}>
             <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} /> Actualiser
