@@ -73,7 +73,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-[calc(100vh-7rem)] flex-col gap-4">
-      <PageHeader title="Assistant IA" subtitle="Questions en langage naturel sur l'état de la plateforme" />
+      <PageHeader titleKey="page.chat.title" subtitleKey="page.chat.sub" />
 
       <Card className="flex min-h-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
