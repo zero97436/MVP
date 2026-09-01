@@ -1,7 +1,7 @@
 import { useBranding } from "../../lib/branding";
 import { Logo } from "./Logo";
 
-/** Logo de marque : celui du client (plan Professional) sinon le logo Opsora. */
+/** Logo de marque : celui du client (plan Professional) sinon le logo Orbisys. */
 export function BrandLogo({ className = "h-8 w-8" }: { className?: string }) {
   const { branding } = useBranding();
   if (branding.logo_url) {
