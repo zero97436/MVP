@@ -79,8 +79,8 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Reports"
-        subtitle="Disponibilité agrégée — calculée à partir des résultats de checks réels"
+        titleKey="page.reports.title"
+        subtitleKey="page.reports.sub"
         actions={
           <button onClick={exportPdf} disabled={exporting} className="btn-ghost">
             <FileDown className="h-4 w-4" /> {exporting ? "Export…" : "Exporter PDF"}
