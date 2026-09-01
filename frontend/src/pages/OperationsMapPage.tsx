@@ -192,8 +192,8 @@ export default function OperationsMapPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Vue Opérations"
-        subtitle="Cartographie métier temps réel — glissez les tuiles pour composer votre carte"
+        titleKey="page.operations.title"
+        subtitleKey="page.operations.sub"
         actions={
           <div className="flex items-center gap-2">
             <StatusBadge status={overall} label={meta.label} />
