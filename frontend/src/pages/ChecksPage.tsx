@@ -11,6 +11,7 @@ import { CHECK_TYPES } from "../lib/format";
 import { CHECK_META, metaFor } from "../lib/checkMeta";
 import { useAuth } from "../lib/auth";
 import { canEdit } from "../lib/permissions";
+import { useI18n } from "../lib/i18n";
 
 const EMPTY = {
   host_id: 0,
@@ -25,6 +26,7 @@ const EMPTY = {
 };
 
 export default function ChecksPage() {
+  const { t: tr, lang } = useI18n();
   const [checks, setChecks] = useState<Check[]>([]);
   const [hosts, setHosts] = useState<Host[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +39,7 @@ export default function ChecksPage() {
 
   const openCreate = () => {
     setEditingId(null);
-    setForm({ ...EMPTY, config_json: metaFor(EMPTY.type).config });
+    setForm({ ...EMPTY, config_json: metaFor(EMPTY.type, lang).config });
     setShowForm((s) => editingId !== null ? true : !s);
   };
 
@@ -45,7 +47,7 @@ export default function ChecksPage() {
   const changeType = (type: CheckType) => {
     setForm((f) => {
       const wasExample = Object.values(CHECK_META).some((m) => m.config === f.config_json) || f.config_json === "{}" || f.config_json === "";
-      return { ...f, type, config_json: wasExample ? metaFor(type).config : f.config_json };
+      return { ...f, type, config_json: wasExample ? metaFor(type, lang).config : f.config_json };
     });
   };
 
@@ -72,7 +74,7 @@ export default function ChecksPage() {
         setChecks(c.data);
         setHosts(h.data);
       })
-      .catch(() => setError("Erreur de chargement"))
+      .catch(() => setError(tr("common.loadError")))
       .finally(() => setLoading(false));
   };
   useEffect(load, []);
@@ -83,7 +85,7 @@ export default function ChecksPage() {
     try {
       config = JSON.parse(form.config_json || "{}");
     } catch {
-      alert("config_json invalide (JSON attendu)");
+      alert(tr("chk.badJson"));
       return;
     }
     const payload = {
@@ -113,7 +115,7 @@ export default function ChecksPage() {
     load();
   };
   const remove = async (id: number) => {
-    if (confirm("Supprimer ce check ?")) {
+    if (confirm(tr("chk.confirmDelete"))) {
       await deleteCheck(id);
       load();
     }
@@ -126,11 +128,11 @@ export default function ChecksPage() {
       <PageHeader
         helpTopic="checks"
         title="Checks"
-        subtitle={`${checks.length} sondes configurées`}
+        subtitle={`${checks.length} ${tr("chk.subtitle")}`}
         actions={
           editable && (
             <button onClick={openCreate} className="btn-primary">
-              <Plus className="h-4 w-4" /> {showForm && editingId === null ? "Annuler" : "Nouveau check"}
+              <Plus className="h-4 w-4" /> {showForm && editingId === null ? tr("common.cancel") : tr("chk.new")}
             </button>
           )
         }
@@ -139,92 +141,92 @@ export default function ChecksPage() {
       {showForm && (
         <Card>
           <p className="mb-3 text-sm font-medium text-ink-soft">
-            {editingId !== null ? "Modifier le check" : "Nouveau check"}
+            {editingId !== null ? tr("chk.edit") : tr("chk.new")}
           </p>
           <form onSubmit={submit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft">
-              Hôte à superviser
+              {tr("chk.hostToMonitor")}
               <select value={form.host_id} onChange={(e) => setForm({ ...form, host_id: Number(e.target.value) })} className="input" required>
-                <option value="">— Choisir un hôte —</option>
+                <option value="">{tr("chk.chooseHost")}</option>
                 {hosts.map((h) => <option key={h.id} value={h.id}>{h.name} ({h.hostname_or_ip})</option>)}
               </select>
             </label>
             <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft">
-              Type de contrôle
+              {tr("chk.controlType")}
               <select value={form.type} onChange={(e) => changeType(e.target.value as CheckType)} className="input">
-                {CHECK_TYPES.map((t) => <option key={t} value={t}>{metaFor(t).label}</option>)}
+                {CHECK_TYPES.map((t) => <option key={t} value={t}>{metaFor(t, lang).label}</option>)}
               </select>
             </label>
 
             <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft sm:col-span-2">
-              Nom du check (libre)
-              <input required placeholder={`ex. « ${metaFor(form.type).label} sur mon serveur »`} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input" />
+              {tr("chk.nameLabel")}
+              <input required placeholder={`${tr("chk.namePhPre")} ${metaFor(form.type, lang).label} ${tr("chk.namePhPost")}`} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input" />
             </label>
 
             {/* Aide contextuelle selon le type choisi */}
             <div className="rounded-lg border border-brand/25 bg-brand/5 p-3 text-xs text-ink-soft sm:col-span-2">
-              <p className="font-medium text-ink">ℹ️ {metaFor(form.type).desc}</p>
-              {metaFor(form.type).thresholds && (
-                <p className="mt-1">Seuils <b>Warn / Crit</b> = {metaFor(form.type).thresholds}.</p>
+              <p className="font-medium text-ink">ℹ️ {metaFor(form.type, lang).desc}</p>
+              {metaFor(form.type, lang).thresholds && (
+                <p className="mt-1">{tr("chk.thresholdsWarnCrit")} {metaFor(form.type, lang).thresholds}.</p>
               )}
-              {metaFor(form.type).config !== "{}" && (
-                <p className="mt-1">Configuration attendue (déjà pré-remplie ci-dessous) : <code className="rounded bg-bg-soft px-1">{metaFor(form.type).config}</code></p>
+              {metaFor(form.type, lang).config !== "{}" && (
+                <p className="mt-1">{tr("chk.configExpected")} <code className="rounded bg-bg-soft px-1">{metaFor(form.type, lang).config}</code></p>
               )}
             </div>
 
             <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft sm:col-span-2">
-              Configuration {metaFor(form.type).config === "{}" ? "(aucune requise pour ce type)" : "(remplacez les valeurs vides)"}
-              <textarea value={form.config_json} onChange={(e) => setForm({ ...form, config_json: e.target.value })} className="input font-mono text-xs" rows={metaFor(form.type).config.length > 60 ? 3 : 2} />
+              {tr("chk.configLabel")} {metaFor(form.type, lang).config === "{}" ? tr("chk.noConfig") : tr("chk.replaceEmpty")}
+              <textarea value={form.config_json} onChange={(e) => setForm({ ...form, config_json: e.target.value })} className="input font-mono text-xs" rows={metaFor(form.type, lang).config.length > 60 ? 3 : 2} />
             </label>
 
             <div className="grid grid-cols-3 gap-2 sm:col-span-2">
               <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft">
-                Intervalle (secondes)
+                {tr("chk.interval")}
                 <input type="number" value={form.interval_seconds} onChange={(e) => setForm({ ...form, interval_seconds: Number(e.target.value) })} className="input" />
               </label>
               <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft">
-                Seuil avertissement {metaFor(form.type).thresholds ? "" : "(optionnel)"}
+                {tr("chk.warnThreshold")} {metaFor(form.type, lang).thresholds ? "" : tr("chk.optional")}
                 <input type="number" placeholder="—" value={form.warning_threshold} onChange={(e) => setForm({ ...form, warning_threshold: e.target.value })} className="input" />
               </label>
               <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft">
-                Seuil critique {metaFor(form.type).thresholds ? "" : "(optionnel)"}
+                {tr("chk.critThreshold")} {metaFor(form.type, lang).thresholds ? "" : tr("chk.optional")}
                 <input type="number" placeholder="—" value={form.critical_threshold} onChange={(e) => setForm({ ...form, critical_threshold: e.target.value })} className="input" />
               </label>
             </div>
 
             <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft">
-              Délai max de réponse (secondes)
+              {tr("chk.maxDelay")}
               <input type="number" value={form.timeout_seconds} onChange={(e) => setForm({ ...form, timeout_seconds: Number(e.target.value) })} className="input" />
             </label>
             <label className="flex flex-col gap-1 text-xs font-medium text-ink-soft">
-              Exécuté par
+              {tr("chk.executedBy")}
               <select value={form.executor_host_id} onChange={(e) => setForm({ ...form, executor_host_id: Number(e.target.value) })} className="input">
-                <option value={0}>Serveur central (par défaut)</option>
-                {hosts.map((h) => <option key={h.id} value={h.id}>Sonde : agent de {h.name}</option>)}
+                <option value={0}>{tr("chk.centralDefault")}</option>
+                {hosts.map((h) => <option key={h.id} value={h.id}>{tr("chk.probeAgent")} {h.name}</option>)}
               </select>
             </label>
 
             <div className="flex gap-2 sm:col-span-2">
-              <button className="btn-primary flex-1">{editingId !== null ? "Enregistrer" : "Créer le check"}</button>
-              <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY); }} className="btn-ghost">Annuler</button>
+              <button className="btn-primary flex-1">{editingId !== null ? tr("common.save") : tr("chk.createBtn")}</button>
+              <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY); }} className="btn-ghost">{tr("common.cancel")}</button>
             </div>
           </form>
         </Card>
       )}
 
       {loading ? <Loading /> : error ? <ErrorState message={error} /> :
-        checks.length === 0 ? <EmptyState message="Aucun check." /> : (
+        checks.length === 0 ? <EmptyState message={tr("chk.empty")} /> : (
         <Card className="overflow-hidden p-0">
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-bg-soft/50 text-left text-xs uppercase tracking-wide text-ink-faint">
               <tr>
-                <th className="px-4 py-3">Nom</th>
-                <th className="px-4 py-3">Hôte</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Exécuté par</th>
-                <th className="px-4 py-3">Intervalle</th>
-                <th className="px-4 py-3">Statut</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">{tr("chk.colName")}</th>
+                <th className="px-4 py-3">{tr("ten.host")}</th>
+                <th className="px-4 py-3">{tr("chk.colType")}</th>
+                <th className="px-4 py-3">{tr("chk.executedBy")}</th>
+                <th className="px-4 py-3">{tr("chk.colInterval")}</th>
+                <th className="px-4 py-3">{tr("cd.status")}</th>
+                <th className="px-4 py-3 text-right">{tr("common.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -235,7 +237,7 @@ export default function ChecksPage() {
                   </td>
                   <td className="px-4 py-3 text-ink-soft">{hostName.get(c.host_id) ?? "—"}</td>
                   <td className="px-4 py-3 text-ink-soft">{c.type}</td>
-                  <td className="px-4 py-3 text-ink-soft">{c.executor_host_id ? `Agent : ${hostName.get(c.executor_host_id) ?? "?"}` : "Central"}</td>
+                  <td className="px-4 py-3 text-ink-soft">{c.executor_host_id ? `${tr("chk.agentPrefix")} ${hostName.get(c.executor_host_id) ?? "?"}` : tr("chk.central")}</td>
                   <td className="px-4 py-3 text-ink-soft">{c.interval_seconds}s</td>
                   <td className="px-4 py-3"><StatusBadge status={c.last_status} size="xs" /></td>
                   <td className="px-4 py-3">
