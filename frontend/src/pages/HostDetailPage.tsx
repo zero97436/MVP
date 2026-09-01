@@ -5,6 +5,7 @@ import { getHost, getHostMetrics, getHostMetricsHourly, listChecks, listResults,
 import type { Check, CheckResult, Host, HostMetric, HostMetricHourly } from "../types";
 import { useAuth } from "../lib/auth";
 import { isAdmin } from "../lib/permissions";
+import { useI18n } from "../lib/i18n";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Card, SectionTitle, MotionGrid } from "../components/ui/Card";
 import { StatusBadge } from "../components/ui/StatusBadge";
@@ -22,6 +23,7 @@ const WIDGETS = [
 ] as const;
 
 export default function HostDetailPage() {
+  const { t } = useI18n();
   const { id } = useParams();
   const hostId = Number(id);
   const [host, setHost] = useState<Host | null>(null);
@@ -51,7 +53,7 @@ export default function HostDetailPage() {
             .sort((a, b) => +new Date(b.checked_at) - +new Date(a.checked_at)),
         );
       } catch {
-        setError("Hôte introuvable");
+        setError(t("hd.notFound"));
       } finally {
         setLoading(false);
       }
@@ -85,7 +87,7 @@ export default function HostDetailPage() {
   const checkName = useMemo(() => new Map(checks.map((c) => [c.id, c.name])), [checks]);
 
   if (loading) return <Loading />;
-  if (error || !host) return <ErrorState message={error ?? "Erreur"} />;
+  if (error || !host) return <ErrorState message={error ?? t("common.loadError")} />;
 
   return (
     <div className="space-y-6">
@@ -101,18 +103,18 @@ export default function HostDetailPage() {
 
       {/* Résumé */}
       <Card className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Summary icon={Server} label="Hostname / IP" value={host.hostname_or_ip} />
-        <Summary icon={Server} label="Environnement" value={host.environment} />
-        <Summary icon={Server} label="Uptime" value={uptimeSince(host.created_at)} />
-        <Summary icon={Server} label="Checks" value={String(checks.length)} />
+        <Summary icon={Server} label={t("hd.hostnameIp")} value={host.hostname_or_ip} />
+        <Summary icon={Server} label={t("hd.environment")} value={host.environment} />
+        <Summary icon={Server} label={t("common.uptime")} value={uptimeSince(host.created_at)} />
+        <Summary icon={Server} label={t("common.checks")} value={String(checks.length)} />
         {hasMetrics && metrics[metrics.length - 1].process_count != null && (
-          <Summary icon={Server} label="Processus" value={String(metrics[metrics.length - 1].process_count)} />
+          <Summary icon={Server} label={t("hd.processes")} value={String(metrics[metrics.length - 1].process_count)} />
         )}
         {hasMetrics && metrics[metrics.length - 1].load1 != null && (
-          <Summary icon={Server} label="Charge (1 min)" value={String(metrics[metrics.length - 1].load1)} />
+          <Summary icon={Server} label={t("hd.load1")} value={String(metrics[metrics.length - 1].load1)} />
         )}
         {hasMetrics && metrics[metrics.length - 1].temperature != null && (
-          <Summary icon={Server} label="Température" value={`${metrics[metrics.length - 1].temperature} °C`} />
+          <Summary icon={Server} label={t("hd.temperature")} value={`${metrics[metrics.length - 1].temperature} °C`} />
         )}
       </Card>
 
@@ -126,8 +128,8 @@ export default function HostDetailPage() {
             <div className="mb-2 flex items-center justify-between">
               <p className="text-xs text-ink-faint">
                 {mwindow === "24h"
-                  ? "Métriques système collectées par agent (24 h, brut)."
-                  : "Tendances agrégées par heure (30 jours, downsampling)."}
+                  ? t("hd.metrics24")
+                  : t("hd.metrics30")}
               </p>
               <div className="flex items-center gap-1 rounded-lg border border-border bg-bg-soft p-1">
                 {(["24h", "30d"] as const).map((w) => (
@@ -165,7 +167,7 @@ export default function HostDetailPage() {
           {/* Détail par disque */}
           {Object.keys(latestDisks).length > 0 && (
             <Card>
-              <SectionTitle title={`Disques (${Object.keys(latestDisks).length})`} icon={HardDrive} />
+              <SectionTitle title={`${t("hd.disks")} (${Object.keys(latestDisks).length})`} icon={HardDrive} />
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {Object.entries(latestDisks).map(([name, pct]) => (
                   <DiskBar key={name} name={name} pct={pct} />
@@ -177,12 +179,7 @@ export default function HostDetailPage() {
       ) : (
         <Card className="flex items-center gap-3 text-sm text-ink-soft">
           <Server className="h-5 w-5 shrink-0 text-ink-faint" />
-          <span>
-            Pas de métriques système pour cet hôte. C'est normal pour un équipement réseau
-            (box, routeur, imprimante…) qui n'exécute pas d'agent. Pour suivre CPU/RAM/disque,
-            lancez l'agent (<span className="font-mono text-xs">scripts/agent_example.py</span>)
-            sur une machine. La supervision se fait ici via les checks ci-dessous.
-          </span>
+          <span>{t("hd.noMetrics")}</span>
         </Card>
       )}
 
@@ -209,7 +206,7 @@ export default function HostDetailPage() {
 
         {/* Timeline des événements */}
         <Card>
-          <SectionTitle title="Timeline des événements" />
+          <SectionTitle title={t("hd.timeline")} />
           <div className="relative max-h-[360px] space-y-3 overflow-y-auto border-l border-border pl-4">
             {results.slice(0, 40).map((r) => (
               <div key={r.id} className="relative">
@@ -247,28 +244,26 @@ function DiskBar({ name, pct }: { name: string; pct: number }) {
   );
 }
 
-const MODE_INFO: Record<string, { label: string; desc: string }> = {
-  agentless: { label: "Agentless", desc: "Le serveur sonde directement l'hôte sur le réseau (ICMP, SNMP, HTTP, TCP…)." },
-  agent: { label: "Agent (push HTTPS)", desc: "Un agent installé sur l'hôte pousse ses métriques et résultats vers Opsora en HTTPS." },
-  ssh: { label: "SSH (tunnel)", desc: "Le serveur se connecte en SSH à l'hôte pour exécuter les checks. Les identifiants SSH de l'hôte sont réutilisés." },
-};
+const MODE_KEYS = ["agentless", "agent", "ssh"];
 
 function CopyButton({ text }: { text: string }) {
+  const { t } = useI18n();
   const [done, setDone] = useState(false);
   const copy = async () => {
     try { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1500); } catch { /* clipboard indispo */ }
   };
   return (
-    <button onClick={copy} className="btn-ghost shrink-0 px-2 py-1 text-xs" title="Copier">
+    <button onClick={copy} className="btn-ghost shrink-0 px-2 py-1 text-xs" title={t("hd.copy")}>
       {done ? <CheckIcon className="h-3.5 w-3.5 text-status-ok" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
   );
 }
 
 function SupervisionCard({ host }: { host: Host }) {
+  const { t } = useI18n();
   const { user } = useAuth();
   const mode = host.monitoring_mode ?? "agentless";
-  const info = MODE_INFO[mode] ?? MODE_INFO.agentless;
+  const modeKey = MODE_KEYS.includes(mode) ? mode : "agentless";
   const [enr, setEnr] = useState<HostEnrollment | null>(null);
 
   useEffect(() => {
@@ -283,10 +278,10 @@ function SupervisionCard({ host }: { host: Host }) {
 
   return (
     <Card>
-      <SectionTitle title="Superviser cet hôte" icon={Icon} />
+      <SectionTitle title={t("hd.superviseTitle")} icon={Icon} />
       <div className="mb-3 flex items-center gap-2">
-        <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand">{info.label}</span>
-        <p className="text-xs text-ink-faint">{info.desc}</p>
+        <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand">{t(`hd.mode.${modeKey}`)}</span>
+        <p className="text-xs text-ink-faint">{t(`hd.desc.${modeKey}`)}</p>
       </div>
 
       {mode === "agent" && (
@@ -294,18 +289,18 @@ function SupervisionCard({ host }: { host: Host }) {
           enr ? (
             <div className="space-y-3">
               <div>
-                <p className="mb-1 text-xs font-medium text-ink-soft">Commande d'installation de l'agent</p>
+                <p className="mb-1 text-xs font-medium text-ink-soft">{t("hd.installCmd")}</p>
                 <div className="flex items-start gap-2">
                   <pre className="flex-1 overflow-x-auto rounded-lg border border-border bg-bg-soft/60 p-3 text-xs text-ink">{enr.install_command}</pre>
                   <CopyButton text={enr.install_command} />
                 </div>
                 <p className="mt-1 text-[11px] text-ink-faint">
-                  Prérequis : <code>pip install psutil requests</code> et le script <code>agent_example.py</code> (dossier <code>scripts/</code>).
-                  {enr.ingest_key_required ? " La clé d'ingestion est incluse ci-dessus." : " Aucune clé d'ingestion requise (INGEST_API_KEY non défini)."}
+                  {t("hd.prereq")} <code>pip install psutil requests</code> {t("hd.andScript")} <code>agent_example.py</code> {t("hd.folder")} <code>scripts/</code>).
+                  {enr.ingest_key_required ? t("hd.keyIncluded") : t("hd.noKey")}
                 </p>
               </div>
               <details className="text-xs">
-                <summary className="cursor-pointer text-ink-soft">Service systemd (démarrage automatique)</summary>
+                <summary className="cursor-pointer text-ink-soft">{t("hd.systemd")}</summary>
                 <div className="mt-2 flex items-start gap-2">
                   <pre className="flex-1 overflow-x-auto rounded-lg border border-border bg-bg-soft/60 p-3 text-[11px] text-ink">{enr.systemd_unit}</pre>
                   <CopyButton text={enr.systemd_unit} />
@@ -313,17 +308,17 @@ function SupervisionCard({ host }: { host: Host }) {
               </details>
             </div>
           ) : (
-            <p className="text-xs text-ink-faint">Chargement des instructions d'installation…</p>
+            <p className="text-xs text-ink-faint">{t("hd.loadingInstall")}</p>
           )
         ) : (
-          <p className="text-xs text-ink-faint">Les instructions d'installation de l'agent sont réservées aux administrateurs.</p>
+          <p className="text-xs text-ink-faint">{t("hd.adminOnly")}</p>
         )
       )}
 
       {mode === "ssh" && host.ssh_config && (
         <p className="text-xs text-ink-faint">
-          Connexion : <b className="text-ink-soft">{(host.ssh_config.user as string) || "?"}@{host.hostname_or_ip}:{String(host.ssh_config.port ?? 22)}</b>.
-          Les checks de cet hôte héritent de ces identifiants.
+          {t("hd.connection")} <b className="text-ink-soft">{(host.ssh_config.user as string) || "?"}@{host.hostname_or_ip}:{String(host.ssh_config.port ?? 22)}</b>.
+          {t("hd.inheritCreds")}
         </p>
       )}
     </Card>
