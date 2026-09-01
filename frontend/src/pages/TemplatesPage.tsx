@@ -11,8 +11,10 @@ import { Card, MotionGrid, SectionTitle } from "../components/ui/Card";
 import { Loading } from "../components/States";
 import { useAuth } from "../lib/auth";
 import { canEdit } from "../lib/permissions";
+import { useI18n } from "../lib/i18n";
 
 export default function TemplatesPage() {
+  const { t: tr } = useI18n();
   const { user } = useAuth();
   const editable = canEdit(user);
   const [templates, setTemplates] = useState<CheckTemplate[]>([]);
@@ -36,8 +38,8 @@ export default function TemplatesPage() {
     const host = hosts.find((h) => h.id === hostId);
     setFeedback((p) => ({
       ...p,
-      [tplId]: `✅ ${data.created.length} check(s) créé(s) sur ${host?.name}` +
-        (data.skipped.length ? ` · ${data.skipped.length} déjà présent(s), ignoré(s)` : ""),
+      [tplId]: `✅ ${data.created.length} ${tr("tpl.checksCreated")} ${host?.name}` +
+        (data.skipped.length ? ` · ${data.skipped.length} ${tr("tpl.alreadyPresent")}` : ""),
     }));
   };
 
@@ -50,7 +52,7 @@ export default function TemplatesPage() {
   };
 
   const remove = async (id: number) => {
-    if (confirm("Supprimer ce modèle ? (les checks déjà appliqués ne sont pas touchés)")) {
+    if (confirm(tr("tpl.confirmDelete"))) {
       await deleteCheckTemplate(id);
       load();
     }
@@ -69,27 +71,25 @@ export default function TemplatesPage() {
       {/* Capturer un hôte existant en modèle */}
       {editable && (
         <Card>
-          <SectionTitle title="Créer un modèle depuis un hôte existant" icon={Copy} />
+          <SectionTitle title={tr("tpl.createFromHost")} icon={Copy} />
           <form onSubmit={captureHost} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <select
               value={capture.host_id}
               onChange={(e) => setCapture({ ...capture, host_id: Number(e.target.value) })}
               className="input" required
             >
-              <option value={0}>Choisir un hôte source…</option>
+              <option value={0}>{tr("tpl.chooseSource")}</option>
               {hosts.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
             </select>
             <input
-              required placeholder="Nom du modèle (ex. Serveur type agence)"
+              required placeholder={tr("tpl.namePh")}
               value={capture.name}
               onChange={(e) => setCapture({ ...capture, name: e.target.value })}
               className="input"
             />
-            <button className="btn-primary">Capturer les checks</button>
+            <button className="btn-primary">{tr("tpl.capture")}</button>
           </form>
-          <p className="mt-2 text-xs text-ink-faint">
-            Les checks de l'hôte (types, configs, seuils, intervalles) deviennent un modèle réutilisable.
-          </p>
+          <p className="mt-2 text-xs text-ink-faint">{tr("tpl.captureNote")}</p>
         </Card>
       )}
 
@@ -131,11 +131,11 @@ export default function TemplatesPage() {
                     onChange={(e) => setTargets((p) => ({ ...p, [t.id]: Number(e.target.value) }))}
                     className="input flex-1 text-xs"
                   >
-                    <option value={0}>Appliquer à l'hôte…</option>
+                    <option value={0}>{tr("tpl.applyTo")}</option>
                     {hosts.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
                   </select>
                   <button onClick={() => apply(t.id)} disabled={!targets[t.id]} className="btn-primary px-3 py-1.5 text-xs disabled:opacity-40">
-                    <Zap className="h-3.5 w-3.5" /> Appliquer
+                    <Zap className="h-3.5 w-3.5" /> {tr("tpl.apply")}
                   </button>
                 </div>
               )}
