@@ -51,8 +51,8 @@ export default function BamPage() {
     <div className="space-y-6">
       <PageHeader
         helpTopic="bam"
-        title="Services métier"
-        subtitle="Surveillance métier (BAM) — agrège des checks/hôtes avec une règle d'impact"
+        titleKey="page.bam.title"
+        subtitleKey="page.bam.sub"
         actions={editable && (
           <button onClick={() => setShowForm((s) => !s)} className="btn-primary">
             <Plus className="h-4 w-4" /> {showForm ? "Annuler" : "Nouveau service"}
