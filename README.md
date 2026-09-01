@@ -1,4 +1,4 @@
-# Opsora
+# Orbisys
 
 **🇫🇷 Français** · [🇬🇧 English](README.en.md)
 
@@ -165,8 +165,8 @@ curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER && newgrp docker
 
 # 2. Récupérer le projet
-git clone https://github.com/zero97436/MVP.git opsora
-cd opsora
+git clone https://github.com/zero97436/MVP.git orbisys
+cd orbisys
 
 # 3. Configurer l'environnement
 cp .env.example .env
@@ -186,7 +186,7 @@ nano .env
 
 ```bash
 # 4. Générer le certificat TLS auto-signé (une fois)
-openssl req -x509 -nodes -newkey rsa:2048 -days 825   -keyout deploy/nginx/certs/server.key -out deploy/nginx/certs/server.crt   -subj "/CN=opsora"
+openssl req -x509 -nodes -newkey rsa:2048 -days 825   -keyout deploy/nginx/certs/server.key -out deploy/nginx/certs/server.crt   -subj "/CN=orbisys"
 
 # 5. Démarrer (build + migrations automatiques)
 docker compose up -d --build
@@ -208,7 +208,7 @@ sudo systemctl enable docker
 
 # Sauvegarde quotidienne à 2h du matin (dump PostgreSQL dans ./backups) :
 crontab -e
-0 2 * * * cd /chemin/vers/Opsora && ./scripts/backup.sh >> /var/log/opsora-backup.log 2>&1
+0 2 * * * cd /chemin/vers/Orbisys && ./scripts/backup.sh >> /var/log/orbisys-backup.log 2>&1
 
 # Certificat TLS réel (par défaut : auto-signé) — déposer vos fichiers :
 #   deploy/nginx/certs/server.crt  et  server.key
@@ -221,8 +221,8 @@ crontab -e
 2. Ouvrir PowerShell :
 
 ```powershell
-git clone https://github.com/zero97436/MVP.git opsora
-cd opsora
+git clone https://github.com/zero97436/MVP.git orbisys
+cd orbisys
 Copy-Item .env.example .env
 notepad .env          # mêmes variables que Linux
 docker compose up -d --build
@@ -246,7 +246,7 @@ les commandes Linux ci-dessus.
 ### Mise à jour
 
 ```bash
-cd opsora
+cd orbisys
 git pull
 docker compose up -d --build     # migrations de base appliquées automatiquement
 docker compose restart nginx     # rafraîchit la façade
@@ -305,9 +305,9 @@ python scripts/agent_example.py \
 - **Linux** : unité systemd :
 
 ```ini
-# /etc/systemd/system/opsora-agent.service
+# /etc/systemd/system/orbisys-agent.service
 [Unit]
-Description=Agent Opsora
+Description=Agent Orbisys
 After=network-online.target
 [Service]
 ExecStart=/usr/bin/python3 /opt/supervision/agent_example.py --server https://... --hostname %H --key XXX
@@ -461,7 +461,7 @@ Serveur Paris;192.168.1.10;production;Agence Paris;;;Serveur Linux;Routeur Paris
 Coller (ou charger) le contenu de `hosts.cfg` + `services.cfg` concaténés :
 
 - `define host` → hôte créé (alias, address) — la directive **`parents` devient une
-  dépendance** Opsora ✨
+  dépendance** Orbisys ✨
 - `define service` → check mappé automatiquement :
   `check_http`→`http`, `check_tcp!8443`→`tcp_port 8443`, `check_ssh`, `check_ping`,
   `check_smtp/ftp/dns/imap/pop/ldap/snmp`…
@@ -559,7 +559,7 @@ métriques brutes 15 j (agrégats horaires 1 an), alertes résolues 90 j, évén
 ## 🔁 Haute disponibilité (HA — Enterprise)
 
 Le backend et les workers sont **stateless** : scalez-les librement derrière nginx.
-Le seul composant à singleton est le **scheduler** — Opsora intègre une **élection
+Le seul composant à singleton est le **scheduler** — Orbisys intègre une **élection
 de leader** (verrou Redis à TTL renouvelé) : lancez plusieurs schedulers, un seul
 planifie, les autres veillent et prennent le relais **automatiquement** si le leader
 tombe (aucune exécution de check dupliquée, bascule sans intervention).
@@ -575,7 +575,7 @@ docker compose up -d --scale backend=3 --scale worker=3 --scale scheduler=2
   fraîcheur du heartbeat.
 - Sans Redis (mono-instance), le scheduler reste leader local : rien ne casse.
 - Pour une HA complète, prévoir Postgres et Redis en haute disponibilité (réplication /
-  service géré) — hors périmètre de l'image Opsora.
+  service géré) — hors périmètre de l'image Orbisys.
 
 ---
 
