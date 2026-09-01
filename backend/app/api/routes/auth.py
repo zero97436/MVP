@@ -67,18 +67,18 @@ def _send_reset_email(to: str, link: str, lang: str = "fr") -> bool:
 
     if lang == "en":
         body = (
-            "Hello,\n\nYou requested a reset of your Opsora password.\n\n"
+            "Hello,\n\nYou requested a reset of your Orbisys password.\n\n"
             f"Click this link (valid for {RESET_TTL_MINUTES} minutes):\n{link}\n\n"
-            "If you did not request this, ignore this email.\n\nThe Opsora team"
+            "If you did not request this, ignore this email.\n\nThe Orbisys team"
         )
-        subject = "Reset your Opsora password"
+        subject = "Reset your Orbisys password"
     else:
         body = (
-            "Bonjour,\n\nVous avez demandé la réinitialisation de votre mot de passe Opsora.\n\n"
+            "Bonjour,\n\nVous avez demandé la réinitialisation de votre mot de passe Orbisys.\n\n"
             f"Cliquez sur ce lien (valable {RESET_TTL_MINUTES} minutes) :\n{link}\n\n"
-            "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.\n\nL'équipe Opsora"
+            "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.\n\nL'équipe Orbisys"
         )
-        subject = "Réinitialisation de votre mot de passe Opsora"
+        subject = "Réinitialisation de votre mot de passe Orbisys"
     msg = MIMEText(body)
     msg["Subject"] = subject
     msg["From"] = settings.SMTP_FROM
