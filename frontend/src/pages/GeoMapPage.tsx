@@ -12,6 +12,7 @@ import { ErrorState, Loading } from "../components/States";
 import { buildHostViews } from "../lib/fleet";
 import { statusMeta } from "../lib/status";
 import { useAuth } from "../lib/auth";
+import { useI18n } from "../lib/i18n";
 import { canEdit } from "../lib/permissions";
 import { cn } from "../lib/cn";
 
@@ -41,6 +42,7 @@ function ClickCatcher({ onClick }: { onClick: (lat: number, lon: number) => void
 }
 
 export default function GeoMapPage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const editable = canEdit(user);
   const [hosts, setHosts] = useState<Host[]>([]);
@@ -54,7 +56,7 @@ export default function GeoMapPage() {
   const load = () =>
     Promise.all([listHosts(), listChecks()])
       .then(([h, c]) => { setHosts(h.data); setChecks(c.data); })
-      .catch(() => setError("Impossible de charger la carte"));
+      .catch(() => setError(t("common.loadError")));
 
   useEffect(() => {
     load().finally(() => setLoading(false));
@@ -98,17 +100,17 @@ export default function GeoMapPage() {
         subtitleKey="page.geo.sub"
         actions={
           <div className="flex items-center gap-2">
-            <button onClick={locateMe} className="btn-ghost" title="Centrer sur ma position (GPS du navigateur)">
-              <Crosshair className="h-4 w-4" /> Ma position
+            <button onClick={locateMe} className="btn-ghost" title={t("geo.centerMe")}>
+              <Crosshair className="h-4 w-4" /> {t("geo.myPos")}
             </button>
             {editable && (
               <select
                 value={placing}
                 onChange={(e) => setPlacing(Number(e.target.value))}
                 className={cn("input text-xs", placing !== 0 && "ring-2 ring-brand")}
-                title="Choisis un hôte puis clique sur la carte pour le placer"
+                title={t("geo.pickHost")}
               >
-                <option value={0}>📍 Placer un hôte…</option>
+                <option value={0}>{t("geo.placeHost")}</option>
                 {[...unlocated, ...located].map((h) => (
                   <option key={h.id} value={h.id}>
                     {h.latitude == null ? "⬜ " : "✅ "}{h.name}
@@ -123,8 +125,8 @@ export default function GeoMapPage() {
       {placing !== 0 && (
         <div className="card border-l-4 border-brand bg-brand/5 p-3 text-sm text-ink">
           <MousePointerClick className="mr-1.5 inline h-4 w-4 text-brand" />
-          Clique sur la carte à l'endroit exact de <b>{hosts.find((h) => h.id === placing)?.name}</b> —
-          zoome d'abord pour être précis. <button onClick={() => setPlacing(0)} className="ml-2 text-xs text-ink-faint hover:text-ink">annuler</button>
+          {t("geo.clickExact")} <b>{hosts.find((h) => h.id === placing)?.name}</b> {t("geo.zoomFirst")}{" "}
+          <button onClick={() => setPlacing(0)} className="ml-2 text-xs text-ink-faint hover:text-ink">{t("geo.cancel")}</button>
         </div>
       )}
       {flash && <div className="card border-l-4 border-status-ok bg-status-ok/5 p-3 text-sm text-ink">{flash}</div>}
@@ -143,7 +145,7 @@ export default function GeoMapPage() {
           {myPos && (
             <CircleMarker center={myPos} radius={8}
                           pathOptions={{ color: "#3B82F6", fillColor: "#3B82F6", fillOpacity: 0.9, weight: 3 }}>
-              <Tooltip direction="top" offset={[0, -8]} permanent>Vous êtes ici</Tooltip>
+              <Tooltip direction="top" offset={[0, -8]} permanent>{t("geo.youHere")}</Tooltip>
             </CircleMarker>
           )}
 
@@ -162,9 +164,9 @@ export default function GeoMapPage() {
                     <p className="font-semibold">{l.name}</p>
                     {l.location && <p className="text-xs opacity-70">📍 {l.location}</p>}
                     <StatusBadge status={l.status} size="xs" />
-                    <p className="text-xs opacity-70">{l.checksCount} check(s) · {l.hostname_or_ip}</p>
+                    <p className="text-xs opacity-70">{l.checksCount} {t("geo.checksCount")} · {l.hostname_or_ip}</p>
                     <Link to={`/hosts/${l.id}`} className="text-xs font-medium text-blue-400 hover:underline">
-                      Voir la fiche →
+                      {t("geo.viewHost")}
                     </Link>
                   </div>
                 </Popup>
@@ -176,9 +178,9 @@ export default function GeoMapPage() {
 
       <p className="flex items-center gap-1.5 text-xs text-ink-faint">
         <MapPin className="h-3.5 w-3.5" />
-        {located.length} hôte(s) placé(s)
-        {unlocated.length > 0 && <> · {unlocated.length} à placer (menu « 📍 Placer un hôte » puis clic sur la carte)</>}
-        · actualisation 30 s
+        {located.length} {t("geo.placed")}
+        {unlocated.length > 0 && <> · {unlocated.length} {t("geo.toPlace")}</>}
+        · {t("geo.refresh30")}
       </p>
     </div>
   );
