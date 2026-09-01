@@ -41,8 +41,8 @@ export default function AuditPage() {
     <div className="space-y-6">
       <PageHeader
         helpTopic="audit"
-        title="Audit"
-        subtitle="Journal d'audit — qui a fait quoi, quand, depuis où (enregistrements immuables)"
+        titleKey="page.audit.title"
+        subtitleKey="page.audit.sub"
         actions={
           <button onClick={refresh} disabled={refreshing} className="btn-ghost">
             <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} /> Actualiser
