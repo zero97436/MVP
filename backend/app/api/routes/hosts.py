@@ -120,10 +120,10 @@ def enrollment(host_id: int, request: Request, db: Session = Depends(get_db),
     )
     systemd_unit = (
         "[Unit]\n"
-        "Description=Opsora agent\n"
+        "Description=Orbisys agent\n"
         "After=network-online.target\n\n"
         "[Service]\n"
-        f"ExecStart=/usr/bin/python3 /opt/opsora/agent_example.py --url {metrics_url} "
+        f"ExecStart=/usr/bin/python3 /opt/orbisys/agent_example.py --url {metrics_url} "
         f"--host-id {host.id}{key_arg} --interval 30\n"
         "Restart=always\n"
         "RestartSec=10\n\n"
