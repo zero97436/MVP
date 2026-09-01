@@ -5,19 +5,20 @@ import { useAuth } from "../../lib/auth";
 import { useNow } from "../../hooks/useNow";
 import type { CheckStatus } from "../../types";
 import { statusMeta } from "../../lib/status";
-import { ROLE_LABEL } from "../../lib/permissions";
 import { StatusDot } from "../ui/StatusBadge";
 import { applyTheme, getTheme, type Theme } from "../../lib/theme";
+import { useI18n, type Lang } from "../../lib/i18n";
 
 function ThemeSwitcher() {
+  const { t } = useI18n();
   const [theme, setTheme] = useState<Theme>(getTheme());
   const opts: { v: Theme; icon: typeof Moon; label: string }[] = [
-    { v: "dark", icon: Moon, label: "Sombre" },
-    { v: "light", icon: Sun, label: "Clair" },
-    { v: "system", icon: Monitor, label: "Système" },
+    { v: "dark", icon: Moon, label: t("theme.dark") },
+    { v: "light", icon: Sun, label: t("theme.light") },
+    { v: "system", icon: Monitor, label: t("theme.system") },
   ];
   return (
-    <div className="hidden items-center gap-0.5 rounded-lg border border-border bg-bg p-0.5 md:flex" title="Thème d'affichage">
+    <div className="hidden items-center gap-0.5 rounded-lg border border-border bg-bg p-0.5 md:flex">
       {opts.map((o) => (
         <button
           key={o.v}
@@ -32,17 +33,39 @@ function ThemeSwitcher() {
   );
 }
 
+function LangSwitcher() {
+  const { lang, setLang, t } = useI18n();
+  const opts: Lang[] = ["fr", "en"];
+  return (
+    <div className="hidden items-center gap-0.5 rounded-lg border border-border bg-bg p-0.5 sm:flex" title={t("lang.switch")}>
+      {opts.map((l) => (
+        <button
+          key={l}
+          onClick={() => setLang(l)}
+          className={`grid h-6 w-7 place-items-center rounded text-[11px] font-semibold uppercase ${lang === l ? "bg-brand text-white" : "text-ink-faint hover:text-ink"}`}
+        >
+          {l}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Topbar({ globalStatus }: { globalStatus: CheckStatus }) {
   const { user, logout } = useAuth();
+  const { t } = useI18n();
   const now = useNow();
   const meta = statusMeta(globalStatus);
+  const statusLabel = t(`status.${globalStatus ?? "UNKNOWN"}`);
+  const roleLabel = (role: string) =>
+    ["admin", "operator", "viewer"].includes(role) ? t(`role.${role}`) : role;
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-bg-soft/60 px-6 backdrop-blur">
       <div className="flex items-center gap-3">
         <StatusDot status={globalStatus} pulse={globalStatus !== "OK"} />
         <span className="text-sm font-medium text-ink">
-          Plateforme : <span className={meta.text}>{meta.label}</span>
+          {t("topbar.platform")} : <span className={meta.text}>{statusLabel}</span>
         </span>
       </div>
 
@@ -50,14 +73,15 @@ export function Topbar({ globalStatus }: { globalStatus: CheckStatus }) {
         <button
           onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))}
           className="hidden items-center gap-2 rounded-lg border border-border bg-bg px-3 py-1.5 text-xs text-ink-faint transition-colors hover:text-ink md:flex"
-          title="Recherche globale"
+          title={t("topbar.search")}
         >
-          <Search className="h-3.5 w-3.5" /> Rechercher…
+          <Search className="h-3.5 w-3.5" /> {t("topbar.search")}
           <kbd className="rounded border border-border bg-bg-soft px-1.5 py-0.5 text-[10px]">Ctrl K</kbd>
         </button>
-        <Link to="/tv" className="hidden items-center gap-1.5 rounded-lg border border-border bg-bg px-2.5 py-1.5 text-xs text-ink-faint transition-colors hover:text-ink lg:flex" title="Mode TV plein écran (écran mural)">
+        <Link to="/tv" className="hidden items-center gap-1.5 rounded-lg border border-border bg-bg px-2.5 py-1.5 text-xs text-ink-faint transition-colors hover:text-ink lg:flex" title={t("topbar.tv")}>
           <MonitorPlay className="h-3.5 w-3.5" /> TV
         </Link>
+        <LangSwitcher />
         <ThemeSwitcher />
         <span className="hidden items-center gap-2 text-ink-soft sm:flex">
           <Clock className="h-4 w-4" />
@@ -68,13 +92,13 @@ export function Topbar({ globalStatus }: { globalStatus: CheckStatus }) {
             <span className="text-ink-faint">{user.email}</span>
             <span className="flex items-center gap-1 rounded-full bg-brand/10 px-2 py-0.5 text-xs text-brand">
               <ShieldCheck className="h-3 w-3" />
-              {ROLE_LABEL[user.role]}
+              {roleLabel(user.role)}
             </span>
           </span>
         )}
-        <button onClick={logout} className="btn-ghost px-3 py-1.5" title="Déconnexion">
+        <button onClick={logout} className="btn-ghost px-3 py-1.5" title={t("topbar.logout")}>
           <LogOut className="h-4 w-4" />
-          <span className="hidden sm:inline">Déconnexion</span>
+          <span className="hidden sm:inline">{t("topbar.logout")}</span>
         </button>
       </div>
     </header>
