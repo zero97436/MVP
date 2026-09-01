@@ -1,6 +1,7 @@
 import type { CheckStatus } from "../../types";
 import { statusMeta } from "../../lib/status";
 import { cn } from "../../lib/cn";
+import { useI18n } from "../../lib/i18n";
 
 export function StatusBadge({
   status,
@@ -11,6 +12,7 @@ export function StatusBadge({
   label?: string;
   size?: "xs" | "sm";
 }) {
+  const { t } = useI18n();
   const s = status ?? "UNKNOWN";
   const meta = statusMeta(s);
   const Icon = meta.icon;
@@ -23,7 +25,7 @@ export function StatusBadge({
       )}
     >
       <Icon className={size === "xs" ? "h-3 w-3" : "h-3.5 w-3.5"} />
-      {label ?? s}
+      {label ?? t(`status.${s}`)}
     </span>
   );
 }
