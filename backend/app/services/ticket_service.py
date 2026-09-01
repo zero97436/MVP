@@ -130,22 +130,33 @@ class TicketService:
             from app.models.host import Host
 
             host = self.db.get(Host, check.host_id)
-        host_name = host.name if host else "Hôte inconnu"
+        en = settings.DEFAULT_LANGUAGE == "en"
+        host_name = host.name if host else ("Unknown host" if en else "Hôte inconnu")
 
-        # Titre : « Hôte : sujet » (ex. "TDL : Point sur la téléphonie").
-        title = f"{host_name} : Incident sur {check_name}"
-
-        # Corps rédigé comme un mail.
-        gravite = "critique" if alert.status == "CRITICAL" else "à surveiller"
-        detail = f"\n\nDétail technique : {alert.message}" if alert.message else ""
-        desc = (
-            "Bonjour,\n\n"
-            f"Un incident {gravite} est en cours sur l'hôte « {host_name} » : "
-            f"le contrôle « {check_name} » est passé en {alert.status}."
-            f"{detail}\n\n"
-            "Merci de prendre en charge ce ticket.\n\n"
-            "Cordialement,\nLa supervision"
-        )
+        if en:
+            title = f"{host_name}: Incident on {check_name}"
+            severity = "critical" if alert.status == "CRITICAL" else "to watch"
+            detail = f"\n\nTechnical detail: {alert.message}" if alert.message else ""
+            desc = (
+                "Hello,\n\n"
+                f"A {severity} incident is ongoing on host “{host_name}”: "
+                f"the check “{check_name}” switched to {alert.status}."
+                f"{detail}\n\n"
+                "Please take care of this ticket.\n\n"
+                "Best regards,\nMonitoring"
+            )
+        else:
+            title = f"{host_name} : Incident sur {check_name}"
+            gravite = "critique" if alert.status == "CRITICAL" else "à surveiller"
+            detail = f"\n\nDétail technique : {alert.message}" if alert.message else ""
+            desc = (
+                "Bonjour,\n\n"
+                f"Un incident {gravite} est en cours sur l'hôte « {host_name} » : "
+                f"le contrôle « {check_name} » est passé en {alert.status}."
+                f"{detail}\n\n"
+                "Merci de prendre en charge ce ticket.\n\n"
+                "Cordialement,\nLa supervision"
+            )
         prio = "critical" if alert.status == "CRITICAL" else "high"
         return self.create(title=title, description=desc, priority=prio,
                            alert_id=alert.id, created_by=created_by)
@@ -255,15 +266,26 @@ class TicketService:
             from app.notifications.email_notifier import EmailNotifier
 
             tasks_open = sum(1 for t in ticket.tasks if not t.done)
-            body = (
-                "Bonjour,\n\n"
-                f"Le ticket #{ticket.id} « {ticket.title} » vous a été assigné"
-                f"{f' par {author}' if author else ''}.\n\n"
-                f"Priorité : {ticket.priority} · Statut : {ticket.status}"
-                f"{f' · {tasks_open} tâche(s) à faire' if tasks_open else ''}\n\n"
-                f"{(ticket.description or '')[:500]}\n\n"
-                "Cordialement,\nLa supervision"
-            )
+            if settings.DEFAULT_LANGUAGE == "en":
+                body = (
+                    "Hello,\n\n"
+                    f"Ticket #{ticket.id} “{ticket.title}” has been assigned to you"
+                    f"{f' by {author}' if author else ''}.\n\n"
+                    f"Priority: {ticket.priority} · Status: {ticket.status}"
+                    f"{f' · {tasks_open} task(s) to do' if tasks_open else ''}\n\n"
+                    f"{(ticket.description or '')[:500]}\n\n"
+                    "Best regards,\nMonitoring"
+                )
+            else:
+                body = (
+                    "Bonjour,\n\n"
+                    f"Le ticket #{ticket.id} « {ticket.title} » vous a été assigné"
+                    f"{f' par {author}' if author else ''}.\n\n"
+                    f"Priorité : {ticket.priority} · Statut : {ticket.status}"
+                    f"{f' · {tasks_open} tâche(s) à faire' if tasks_open else ''}\n\n"
+                    f"{(ticket.description or '')[:500]}\n\n"
+                    "Cordialement,\nLa supervision"
+                )
             sent = EmailNotifier().send(
                 Notification(
                     subject=f"[Ticket #{ticket.id}] {ticket.title}",
