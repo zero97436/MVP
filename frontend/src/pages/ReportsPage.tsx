@@ -10,6 +10,7 @@ import { AvailabilityChart } from "../components/charts/AvailabilityChart";
 import { Loading } from "../components/States";
 import { availabilityBuckets, availabilityRatio } from "../lib/series";
 import { formatPercent } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 
 const DAY = 24 * 3600 * 1000;
 
@@ -26,6 +27,7 @@ function slaAccent(av: number): "ok" | "warning" | "critical" {
 }
 
 export default function ReportsPage() {
+  const { t } = useI18n();
   const [results, setResults] = useState<CheckResult[]>([]);
   const [sla, setSla] = useState<SlaReport | null>(null);
   const [mttr, setMttr] = useState<MttrReport | null>(null);
@@ -67,7 +69,7 @@ export default function ReportsPage() {
       URL.revokeObjectURL(url);
     } catch (e: unknown) {
       if ((e as { response?: { status?: number } })?.response?.status === 403) {
-        alert("Export PDF disponible à partir du plan Professional.");
+        alert(t("rep.pdfProOnly"));
       }
     } finally {
       setExporting(false);
@@ -83,32 +85,30 @@ export default function ReportsPage() {
         subtitleKey="page.reports.sub"
         actions={
           <button onClick={exportPdf} disabled={exporting} className="btn-ghost">
-            <FileDown className="h-4 w-4" /> {exporting ? "Export…" : "Exporter PDF"}
+            <FileDown className="h-4 w-4" /> {exporting ? t("rep.exporting") : t("rep.exportPdf")}
           </button>
         }
       />
 
       {proOnly && (
         <div className="card border-l-4 border-brand bg-brand/5 p-4 text-sm text-ink">
-          ⭐ Les rapports <b>SLA / MTTR</b> et l'<b>export PDF</b> sont disponibles à partir du
-          plan <b>Professional</b>. Les graphes de disponibilité ci-dessous restent inclus
-          dans l'édition Community.
+          ⭐ {t("rep.proBanner")}
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <MetricCard label="Disponibilité globale" value={formatPercent(avail, 2)} icon={Gauge} accent={avail >= 99 ? "ok" : avail >= 95 ? "warning" : "critical"} />
-        <MetricCard label="Résultats analysés" value={results.length} icon={CalendarDays} accent="info" />
-        <MetricCard label="Fenêtre" value="30 jours" icon={CalendarRange} accent="neutral" />
+        <MetricCard label={t("rep.globalAvail")} value={formatPercent(avail, 2)} icon={Gauge} accent={avail >= 99 ? "ok" : avail >= 95 ? "warning" : "critical"} />
+        <MetricCard label={t("rep.resultsAnalyzed")} value={results.length} icon={CalendarDays} accent="info" />
+        <MetricCard label={t("rep.window")} value={t("rep.days30")} icon={CalendarRange} accent="neutral" />
       </div>
 
       {/* MTTR & incidents (30 j) */}
       {mttr && (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <MetricCard label="MTTR (résolution moy.)" value={formatDuration(mttr.mttr_seconds)} icon={Timer} accent="info" />
-          <MetricCard label="Incident le plus long" value={formatDuration(mttr.longest_seconds)} icon={Timer} accent="warning" />
-          <MetricCard label="Incidents (30 j)" value={mttr.incidents} icon={AlertTriangle} accent="neutral" />
-          <MetricCard label="Actifs / résolus" value={`${mttr.active} / ${mttr.resolved}`} icon={Wrench} accent={mttr.active ? "critical" : "ok"} />
+          <MetricCard label={t("rep.mttr")} value={formatDuration(mttr.mttr_seconds)} icon={Timer} accent="info" />
+          <MetricCard label={t("rep.longestIncident")} value={formatDuration(mttr.longest_seconds)} icon={Timer} accent="warning" />
+          <MetricCard label={t("rep.incidents30")} value={mttr.incidents} icon={AlertTriangle} accent="neutral" />
+          <MetricCard label={t("rep.activeResolved")} value={`${mttr.active} / ${mttr.resolved}`} icon={Wrench} accent={mttr.active ? "critical" : "ok"} />
         </div>
       )}
 
@@ -116,11 +116,11 @@ export default function ReportsPage() {
       {sla && sla.hosts.length > 0 && (
         <Card className="overflow-hidden p-0">
           <div className="p-5 pb-0">
-            <SectionTitle title={`SLA par hôte — disponibilité globale ${formatPercent(sla.global_availability, 2)}`} icon={Gauge} />
+            <SectionTitle title={`${t("rep.slaByHost")} ${formatPercent(sla.global_availability, 2)}`} icon={Gauge} />
           </div>
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-bg-soft/50 text-left text-xs uppercase tracking-wide text-ink-faint">
-              <tr><th className="px-4 py-3">Hôte</th><th className="px-4 py-3">Disponibilité</th><th className="px-4 py-3">Échantillons</th><th className="px-4 py-3"></th></tr>
+              <tr><th className="px-4 py-3">{t("ten.host")}</th><th className="px-4 py-3">{t("rep.availability")}</th><th className="px-4 py-3">{t("rep.samples")}</th><th className="px-4 py-3"></th></tr>
             </thead>
             <tbody>
               {sla.hosts.map((h) => (
@@ -137,21 +137,20 @@ export default function ReportsPage() {
       )}
 
       <Card>
-        <SectionTitle title="Disponibilité — 24 heures" icon={CalendarDays} />
+        <SectionTitle title={t("rep.avail24")} icon={CalendarDays} />
         <AvailabilityChart data={a24} height={240} />
       </Card>
       <Card>
-        <SectionTitle title="Disponibilité — 7 jours" icon={CalendarDays} />
+        <SectionTitle title={t("rep.avail7")} icon={CalendarDays} />
         <AvailabilityChart data={a7} height={240} />
       </Card>
       <Card>
-        <SectionTitle title="Disponibilité — 30 jours" icon={CalendarRange} />
+        <SectionTitle title={t("rep.avail30")} icon={CalendarRange} />
         <AvailabilityChart data={a30} height={240} />
       </Card>
 
       <p className="text-xs text-ink-faint">
-        Les tranches sans résultat sont considérées à 100 % (aucune panne enregistrée). Pour des
-        rapports long terme fiables, voir la roadmap : rétention / agrégation des check_results.
+        {t("rep.note")}
       </p>
     </div>
   );
