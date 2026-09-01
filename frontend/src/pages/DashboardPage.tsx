@@ -102,7 +102,7 @@ export default function DashboardPage() {
         const res = await Promise.all(sample.map((ch) => listResults(ch.id, 200)));
         setResults(res.flatMap((r) => r.data));
       } catch {
-        setError("Impossible de charger le dashboard");
+        setError(t("common.loadError"));
       } finally {
         setLoading(false);
       }
@@ -202,7 +202,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2">
                 <span className={cn("h-2.5 w-2.5 rounded-full", overall !== "OK" && "animate-pulse")} style={{ background: meta.color }} />
                 <span className="text-xs font-medium uppercase tracking-wide" style={{ color: meta.color }}>
-                  {meta.label}
+                  {t(`status.${overall}`)}
                 </span>
               </div>
               <h2 className="mt-1 text-2xl font-bold text-ink">{headline}</h2>
