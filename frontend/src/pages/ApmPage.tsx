@@ -83,7 +83,7 @@ export default function ApmPage() {
 {`POST /api/apm/ingest
 {"app_name": "mon-erp", "requests": 420, "errors": 3, "latency_ms": 185}`}
             </pre>
-            <p className="mt-2">Le backend Opsora s'auto-instrumente : ses métriques apparaîtront ici d'elles-mêmes.</p>
+            <p className="mt-2">Le backend Orbisys s'auto-instrumente : ses métriques apparaîtront ici d'elles-mêmes.</p>
           </div>
         </Card>
       ) : (
