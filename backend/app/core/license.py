@@ -1,6 +1,6 @@
 """Licence — modèle open-core à 4 plans cumulatifs.
 
-  Community    (défaut, gratuit) : 500 hôtes, checks, dashboard, cartes, alertes
+  Community    (défaut, gratuit) : 25 hôtes, checks, dashboard, cartes, alertes
                 e-mail/webhook, agent, API, IA locale (analyse + chat).
   Professional : canaux avancés (Slack/Teams/Discord/Telegram/SMS), rapports
                  SLA/MTTR + PDF, dashboards personnalisables, rétention étendue.
@@ -80,7 +80,7 @@ FEATURE_LABEL = {
 
 COMMUNITY_PLAN = {
     "plan": "community",
-    "max_hosts": 500,
+    "max_hosts": settings.COMMUNITY_MAX_HOSTS,  # configurable via env COMMUNITY_MAX_HOSTS
     "features": [],
     "customer": None,
     "expires": None,
