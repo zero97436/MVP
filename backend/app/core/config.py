@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     API_PREFIX: str = "/api"
     # Langue des contenus générés côté serveur (tickets auto, e-mails) : "fr" ou "en".
     DEFAULT_LANGUAGE: str = "fr"
+    # Plafond d'hôtes de l'édition Community (gratuite, sans clé). Ajustable sans
+    # recompiler ; les plans payants restent illimités.
+    COMMUNITY_MAX_HOSTS: int = 25
 
     # --- Database ---
     DATABASE_URL: str = "postgresql+psycopg2://supervision:supervision@db:5432/supervision"
