@@ -74,28 +74,26 @@ export default function LoginPage() {
         onSubmit={onSubmit}
         className="card relative w-full max-w-sm p-8"
       >
-        <div className="mb-6 flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/15 text-brand">
+        <div className="absolute right-4 top-4 flex items-center gap-0.5 rounded-lg border border-border bg-bg p-0.5">
+          {(["fr", "en"] as const).map((l) => (
+            <button
+              key={l}
+              type="button"
+              onClick={() => setLang(l)}
+              className={`grid h-6 w-7 place-items-center rounded text-[11px] font-semibold uppercase ${lang === l ? "bg-brand text-white" : "text-ink-faint hover:text-ink"}`}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+        <div className="mb-6 flex items-center gap-3 pr-16">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand/15 text-brand">
             <BrandLogo className="h-9 w-9" />
           </span>
-          <div>
-            <div>
-              <h1 className="text-lg font-semibold text-ink">{branding.display_name}</h1>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-ink-faint">{branding.tagline}</p>
-            </div>
-            <p className="text-xs text-ink-faint">{t("login.subtitle")}</p>
-          </div>
-          <div className="ml-auto flex items-center gap-0.5 rounded-lg border border-border bg-bg p-0.5">
-            {(["fr", "en"] as const).map((l) => (
-              <button
-                key={l}
-                type="button"
-                onClick={() => setLang(l)}
-                className={`grid h-6 w-7 place-items-center rounded text-[11px] font-semibold uppercase ${lang === l ? "bg-brand text-white" : "text-ink-faint hover:text-ink"}`}
-              >
-                {l}
-              </button>
-            ))}
+          <div className="min-w-0">
+            <h1 className="text-lg font-semibold text-ink">{branding.display_name}</h1>
+            <p className="text-[11px] uppercase tracking-[0.14em] text-ink-faint">{branding.tagline}</p>
+            <p className="mt-0.5 text-xs text-ink-faint">{t("login.subtitle")}</p>
           </div>
         </div>
 
