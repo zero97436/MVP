@@ -6,7 +6,7 @@ import app.core.license as lic
 
 def _set_plan(monkeypatch, plan: str):
     monkeypatch.setattr(lic, "get_license", lambda: {
-        "plan": plan, "max_hosts": 500 if plan == "community" else None,
+        "plan": plan, "max_hosts": 25 if plan == "community" else None,
         "features": sorted(lic.PLAN_FEATURES[plan]), "customer": None, "expires": None,
     })
 
@@ -83,5 +83,5 @@ def test_plans_are_cumulative():
     assert lic.FEATURE_PLAN["sso"] == "enterprise"
 
 
-def test_community_host_limit_is_500():
-    assert lic.COMMUNITY_PLAN["max_hosts"] == 500
+def test_community_host_limit():
+    assert lic.COMMUNITY_PLAN["max_hosts"] == 25
