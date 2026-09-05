@@ -43,7 +43,7 @@ def test_branding_requires_pro_plan(client, monkeypatch):
     # …mais en Community : écriture refusée ET lecture = identité par défaut
     # (la personnalisation ne survit pas à une licence expirée).
     monkeypatch.setattr(lic, "get_license", lambda: {
-        "plan": "community", "max_hosts": 500, "features": [], "customer": None, "expires": None,
+        "plan": "community", "max_hosts": 25, "features": [], "customer": None, "expires": None,
     })
     r = client.put("/api/branding", json={"display_name": "Pirate"})
     assert r.status_code == 403 and "Professional" in r.json()["detail"]
@@ -59,7 +59,7 @@ def test_retention_clamped_in_community(monkeypatch):
     monkeypatch.setattr(cfg, "RETENTION_CHECK_RESULTS_DAYS", 365)
     # Community : plafonné à 30 jours.
     monkeypatch.setattr(lic, "get_license", lambda: {
-        "plan": "community", "max_hosts": 500, "features": [], "customer": None, "expires": None,
+        "plan": "community", "max_hosts": 25, "features": [], "customer": None, "expires": None,
     })
     assert retention_days("RETENTION_CHECK_RESULTS_DAYS") == 30
     # Professional (extended_retention) : la valeur configurée s'applique.
