@@ -51,7 +51,7 @@ A **generous Community edition** to drive adoption, with paid plans aligned to
 organizational maturity. Each plan **includes everything above it**.
 
 ### 🆓 Community (free, no key required)
-✅ **Up to 500 hosts** · all 26 check types · full dashboard · mapping (topology +
+✅ **Up to 25 hosts** · all 26 check types · full dashboard · mapping (topology +
 geographic map) · history · availability graphs · **email + webhook** alerts ·
 maintenance windows, dependencies, flapping detection, escalations · Windows/Linux
 agent · network discovery · templates · migration (.cfg / CSV) · internal tickets ·
