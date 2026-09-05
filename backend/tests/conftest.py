@@ -68,10 +68,16 @@ def _full_license(monkeypatch):
     Les tests du gating de licence rétablissent Community explicitement."""
     import app.core.license as lic
 
-    monkeypatch.setattr(lic, "get_license", lambda: {
+    ent = {
         "plan": "enterprise", "max_hosts": None,
         "features": sorted(lic.ALL_FEATURES), "customer": "tests", "expires": None,
-    })
+    }
+    monkeypatch.setattr(lic, "get_license", lambda: ent)
+    # La route hosts importe get_license par son nom : patcher aussi cette référence
+    # pour que la limite d'hôtes soit illimitée par défaut en test (les tests dédiés
+    # à la limite re-patchent app.api.routes.hosts.get_license eux-mêmes).
+    import app.api.routes.hosts as hosts_route
+    monkeypatch.setattr(hosts_route, "get_license", lambda: ent)
     yield
 
 
