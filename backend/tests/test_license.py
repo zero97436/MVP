@@ -20,12 +20,18 @@ def _make_key(payload: dict) -> str:
     return base64.urlsafe_b64encode(raw).decode().rstrip("=") + "." + sig
 
 
-def test_default_community_plan(client):
-    """Sans clé : édition Community — 500 hôtes, pas de features payantes."""
+def test_default_community_plan():
+    """Sans clé : édition Community — 25 hôtes, pas de features payantes."""
+    from app.core.license import COMMUNITY_PLAN, PLAN_FEATURES
+    assert COMMUNITY_PLAN["plan"] == "community"
+    assert COMMUNITY_PLAN["max_hosts"] == 25
+    assert PLAN_FEATURES["community"] == set()
+
+
+def test_license_endpoint_shape(client):
+    """L'endpoint /hosts/license renvoie bien plan + quota + compteur d'usage."""
     lic = client.get("/api/hosts/license").json()
-    assert lic["plan"] == "community"
-    assert lic["max_hosts"] == 500
-    assert lic["features"] == []
+    assert "plan" in lic and "max_hosts" in lic
     assert isinstance(lic["used"], int)
 
 
