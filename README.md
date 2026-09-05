@@ -51,7 +51,7 @@ Une édition **Community généreuse** pour l'adoption, des plans payants align�
 la maturité de l'organisation. Chaque plan **inclut tout ce qui précède**.
 
 ### 🆓 Community (gratuite, sans clé)
-✅ **Jusqu'à 500 hôtes** · les 26 types de checks · dashboard complet · cartographie
+✅ **Jusqu'à 25 hôtes** · les 26 types de checks · dashboard complet · cartographie
 (topologie + carte géographique) · historique · graphes de disponibilité · alertes
 **e-mail + webhook** · maintenance, dépendances, flapping, escalades · agent
 Windows/Linux · découverte réseau · templates · migration (.cfg / CSV) · tickets
