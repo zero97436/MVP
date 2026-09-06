@@ -24,12 +24,8 @@ def professional(client, monkeypatch):
 
 
 def test_community_blocks_pro_features(community):
-    # Rapports SLA / MTTR / PDF -> Professional.
-    assert community.get("/api/reports/sla").status_code == 403
-    assert community.get("/api/reports/mttr").status_code == 403
-    r = community.get("/api/reports/pdf")
-    assert r.status_code == 403
-    assert "Professional" in r.json()["detail"]
+    # (Le gating des rapports SLA/MTTR/PDF est testé dans le dépôt Enterprise,
+    #  où le module `reports` est présent — absent du build Community.)
 
     # Dashboards personnalisables -> Professional (lecture reste ouverte).
     assert community.get("/api/dashboard/layout").status_code == 200
@@ -63,8 +59,7 @@ def test_community_blocks_business_features(community):
 
 
 def test_professional_unlocks_pro_but_not_business(professional):
-    assert professional.get("/api/reports/sla").status_code == 200
-    assert professional.get("/api/reports/pdf").status_code == 200
+    # (Les rapports SLA/PDF en 200 sont testés dans le dépôt Enterprise.)
     assert professional.post("/api/settings/notification-channels",
                              json={"name": "tg", "type": "telegram",
                                    "config_json": {"bot_token": "x", "chat_id": "1"}},
