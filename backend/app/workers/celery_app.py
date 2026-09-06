@@ -19,3 +19,9 @@ celery_app.conf.update(
 # Import des tâches pour qu'elles soient enregistrées.
 celery_app.autodiscover_tasks(["app.workers"])
 import app.workers.tasks  # noqa: E402,F401
+
+# Hooks Enterprise (ex. push ITSM auto lors de l'auto-création de tickets) : à
+# enregistrer dans le worker aussi, pas seulement dans l'API.
+from app.plugins import load_enterprise_hooks  # noqa: E402
+
+load_enterprise_hooks()
