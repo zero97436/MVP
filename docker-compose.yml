@@ -23,7 +23,12 @@ services:
       retries: 10
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        EDITION: ${EDITION:-community}
+      secrets:
+        - github_pat
     command: ["api"]
     env_file: .env
     depends_on:
@@ -40,7 +45,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
   worker:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        EDITION: ${EDITION:-community}
+      secrets:
+        - github_pat
     command: ["worker"]
     env_file: .env
     depends_on:
@@ -50,7 +60,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
   scheduler:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        EDITION: ${EDITION:-community}
+      secrets:
+        - github_pat
     command: ["scheduler"]
     env_file: .env
     depends_on:
@@ -80,3 +95,10 @@ services:
 
 volumes:
   pgdata:
+
+# PAT GitHub pour installer le paquet privé orbisys-enterprise (édition Enterprise).
+# Lu depuis la variable d'environnement GITHUB_PAT au moment du build — n'est stocké
+# ni dans le dépôt, ni dans une couche d'image. Ignoré si EDITION=community.
+secrets:
+  github_pat:
+    environment: GITHUB_PAT
