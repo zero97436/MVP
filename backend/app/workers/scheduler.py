@@ -24,7 +24,9 @@ def run_scheduler() -> None:
     import signal
 
     from app.core.ha import LeaderElector
+    from app.plugins import load_enterprise_hooks
 
+    load_enterprise_hooks()  # hooks Enterprise disponibles aussi dans le scheduler
     logger.info("Scheduler started (tick=%ss)", settings.SCHEDULER_INTERVAL_SECONDS)
     elector = LeaderElector()
     last_run: dict[int, float] = {}
