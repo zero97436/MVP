@@ -1,19 +1,13 @@
-"""ITSM / ticketing : création de tickets (interne) + push vers un outil externe.
+"""ITSM / ticketing : création de tickets (interne).
 
-Providers supportés :
-  - internal    : ticket stocké localement uniquement
-  - webhook     : POST JSON générique vers ITSM_URL
-  - jira        : POST /rest/api/2/issue (basic auth e-mail:token)
-  - servicenow  : POST /api/now/table/incident (basic auth user:token)
-
-La configuration vient des variables d'environnement (voir Settings.ITSM_*).
+Le ticketing interne est Community. Le PUSH vers un outil externe (webhook, Jira,
+ServiceNow) est une fonctionnalité payante (« itsm_connectors », Business) fournie
+par le paquet Enterprise via le hook `itsm_push` (voir app.core.extensions).
+En l'absence du hook (édition Community), seuls les tickets internes existent.
 Les échecs de push n'empêchent JAMAIS la création locale du ticket.
 """
 from __future__ import annotations
 
-import base64
-
-import httpx
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -77,19 +71,18 @@ class TicketService:
         self.db.refresh(ticket)
 
         if provider != "internal":
-            from app.core.license import has_feature
+            from app.core import extensions
 
-            if not has_feature("itsm_connectors"):
-                logger.info("Push ITSM (%s) ignoré : plan sans connecteurs ITSM (Business requis)", provider)
-                return ticket
-            try:
-                ext_id, ext_url = self._push(provider, ticket)
-                ticket.external_id = ext_id
-                ticket.external_url = ext_url
+            # Le push externe est fourni par le paquet Enterprise (hook itsm_push).
+            # Il retourne (external_id, external_url) en cas de succès, sinon None
+            # (édition Community, plan sans connecteurs, ou échec best-effort).
+            result = extensions.call("itsm_push", provider, ticket)
+            if result is None:
+                logger.info("Push ITSM (%s) indisponible : connecteurs ITSM requis (Business).", provider)
+            else:
+                ticket.external_id, ticket.external_url = result
                 self.db.commit()
                 self.db.refresh(ticket)
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("Push ITSM (%s) échoué pour ticket #%s : %s", provider, ticket.id, exc)
         return ticket
 
     def find_open_for_check(self, check_id: int) -> Ticket | None:
@@ -357,51 +350,3 @@ class TicketService:
         self.db.commit()
         return True
 
-    # ---- adapters externes ----
-    def _push(self, provider: str, ticket: Ticket) -> tuple[str | None, str | None]:
-        if provider == "webhook":
-            return self._push_webhook(ticket)
-        if provider == "jira":
-            return self._push_jira(ticket)
-        if provider == "servicenow":
-            return self._push_servicenow(ticket)
-        return None, None
-
-    def _push_webhook(self, ticket: Ticket) -> tuple[str | None, str | None]:
-        payload = {
-            "title": ticket.title, "description": ticket.description,
-            "priority": ticket.priority, "source": "orbisys",
-            "alert_id": ticket.alert_id,
-        }
-        r = httpx.post(settings.ITSM_URL, json=payload, timeout=10)
-        r.raise_for_status()
-        data = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
-        return str(data.get("id") or data.get("ticket_id") or ""), data.get("url")
-
-    def _basic_auth(self, user: str) -> dict:
-        raw = f"{user}:{settings.ITSM_TOKEN}".encode()
-        return {"Authorization": "Basic " + base64.b64encode(raw).decode()}
-
-    def _push_jira(self, ticket: Ticket) -> tuple[str | None, str | None]:
-        url = settings.ITSM_URL.rstrip("/") + "/rest/api/2/issue"
-        body = {
-            "fields": {
-                "project": {"key": settings.ITSM_PROJECT},
-                "summary": ticket.title,
-                "description": ticket.description or "",
-                "issuetype": {"name": "Bug"},
-            }
-        }
-        r = httpx.post(url, json=body, headers=self._basic_auth(settings.ITSM_USER), timeout=10)
-        r.raise_for_status()
-        key = r.json().get("key")
-        return key, (settings.ITSM_URL.rstrip("/") + f"/browse/{key}" if key else None)
-
-    def _push_servicenow(self, ticket: Ticket) -> tuple[str | None, str | None]:
-        table = settings.ITSM_PROJECT or "incident"
-        url = settings.ITSM_URL.rstrip("/") + f"/api/now/table/{table}"
-        body = {"short_description": ticket.title, "description": ticket.description or ""}
-        r = httpx.post(url, json=body, headers=self._basic_auth(settings.ITSM_USER), timeout=10)
-        r.raise_for_status()
-        res = r.json().get("result", {})
-        return res.get("number"), res.get("sys_id")
