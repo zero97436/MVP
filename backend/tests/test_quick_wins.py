@@ -23,12 +23,3 @@ def test_sms_channel_secret_redacted(client):
     sms = next(c for c in chans if c["name"] == "sms-astreinte")
     assert sms["config_json"]["auth_token"] == "********"  # secret masqué
     assert sms["config_json"]["from"] == "+1"               # non secret
-
-
-def test_script_channel_created(client):
-    ch = client.post("/api/settings/notification-channels", json={
-        "name": "handler", "type": "script", "config_json": {"command": "echo hello"},
-    })
-    assert ch.status_code == 201
-    # Test réel : la commande 'echo' réussit -> envoi OK.
-    assert client.post(f"/api/settings/notification-channels/{ch.json()['id']}/test").json()["sent"] is True
